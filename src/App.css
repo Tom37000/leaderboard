@@ -287,13 +287,14 @@ html, body {
 .stizo_cup .leaderboard_container {
   width: 1920px;
   height: 1080px;
-  background-image: url("stizo_cup_background.png");
+  background: rgb(88,168,221);
+  background-image: url("");
 }
 .stizo_cup .row_container {
   display: flex;
   gap: 15px;
-  color: black;
-  box-shadow: inset 0 0 0 5px black;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 5px rgb(0, 0, 0);
 }
 .stizo_cup .row_container .rank_container {
   height: 62px;
@@ -326,13 +327,13 @@ html, body {
   background-color: transparent;
   font-family: "Eurostile";
   font-size: 26px;
-  color: white;
+  color: #ffffff;
 }
 .stizo_cup .header_container {
   display: flex;
   gap: 15px;
-  box-shadow: inset 0 0 0 5px white;
-  background-color: white;
+  box-shadow: inset 0 0 0 5px rgb(255, 255, 255);
+  background-color: rgb(255, 255, 255);
 }
 .stizo_cup .header_container .rank_header {
   width: 90px;
