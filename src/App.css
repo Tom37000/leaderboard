@@ -292,8 +292,8 @@ html, body {
 .stizo_cup .row_container {
   display: flex;
   gap: 15px;
-  color: white;
-  box-shadow: inset 0 0 0 5px white;
+  color: black;
+  box-shadow: inset 0 0 0 5px black;
 }
 .stizo_cup .row_container .rank_container {
   height: 62px;
