@@ -287,8 +287,8 @@ html, body {
 .stizo_cup .leaderboard_container {
   width: 1920px;
   height: 1080px;
-  background: #ff0200;
-  background-image: url("");
+  background: "";
+  background-image: url("artm_leaderboard.png");
 }
 .stizo_cup .row_container {
   display: flex;
