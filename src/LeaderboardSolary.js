@@ -165,7 +165,10 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
 });
 
 function LeaderboardSolary() {
-    const leaderboard_id = new URLSearchParams(useLocation().search).get('id');
+    const location = useLocation();
+    const urlParams = new URLSearchParams(location.search);
+    const leaderboard_id = urlParams.get('id');
+    const cascadeParam = urlParams.get('cascade');
 
     const [leaderboard, setLeaderboard] = useState(null);
     const [apiPage, setApiPage] = useState(0); 
@@ -182,7 +185,7 @@ function LeaderboardSolary() {
     const [showPositionIndicators, setShowPositionIndicators] = useState(false);
     const [hasRefreshedOnce, setHasRefreshedOnce] = useState(false);
     const [animationEnabled, setAnimationEnabled] = useState(false);
-    const [cascadeFadeEnabled, setCascadeFadeEnabled] = useState(true);
+    const [cascadeFadeEnabled, setCascadeFadeEnabled] = useState(cascadeParam === 'true');
     const [previousLeaderboard, setPreviousLeaderboard] = useState(null);
 
     useEffect(() => {
@@ -534,7 +537,7 @@ function LeaderboardSolary() {
                 <div className='leaderboard_table'>
                     <div className='header_container'>
                         <div className='rank_header' onClick={previousPage}>PLACE</div>
-                        <div className='name_header'>ÉQUIPE</div>
+                        <div className='name_header'>JOUEURS</div>
                         <div className='info_header' style={{ fontSize: '12px' }}>AVG PLACE</div>
                         <div className='info_header'>ELIMS</div>
                         <div className='info_header'>WINS</div>

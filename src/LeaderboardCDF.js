@@ -149,7 +149,10 @@ const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, w
 
 function LeaderboardCDF() {
 
-    const leaderboard_id = new URLSearchParams(useLocation().search).get('id');
+    const location = useLocation();
+    const urlParams = new URLSearchParams(location.search);
+    const leaderboard_id = urlParams.get('id');
+    const cascadeParam = urlParams.get('cascade');
 
     const [leaderboard, setLeaderboard] = useState([]);
     const [apiPage, setApiPage] = useState(0); 
@@ -167,7 +170,7 @@ function LeaderboardCDF() {
     const [showPositionIndicators, setShowPositionIndicators] = useState(false);
     const [hasRefreshedOnce, setHasRefreshedOnce] = useState(false);
     const [animationEnabled, setAnimationEnabled] = useState(false);
-    const [cascadeFadeEnabled, setCascadeFadeEnabled] = useState(false);
+    const [cascadeFadeEnabled, setCascadeFadeEnabled] = useState(cascadeParam === 'true');
     const [previousLeaderboard, setPreviousLeaderboard] = useState(null);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
@@ -520,7 +523,7 @@ function LeaderboardCDF() {
                 <div className='leaderboard_table'>
                     <div className='header_container'>
                         <div className='rank_header' onClick={previousPage}>RANK</div>
-                        <div className='name_header'>TEAM</div>
+                        <div className='name_header'>JOUEURS</div>
                         <div style={{fontSize: '13px'}} className='info_header'>AVG PLACE</div>
                         <div className='info_header'>ELIMS</div>
                         <div className='info_header'>WINS</div>

@@ -1,8 +1,8 @@
-import './Leaderboard2R.css';
+import './LeaderboardLyost.css';
 import React, { useState, useEffect } from "react";
 import { useLocation } from 'react-router-dom';
 
-function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex }) {
+const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex }) {
     const renderPositionChange = () => {
         if (!showPositionIndicators) {
             return null;
@@ -89,7 +89,7 @@ function Row({ rank, teamname, points, elims, avg_place, wins, games, order, sho
     };
 
     const getAnimationStyle = () => {
-        if (!animationEnabled || positionChange === 0) return {};
+        if (!animationEnabled || !hasPositionChanged || positionChange === 0) return {};
         
         const rowHeight = 60;
         const realDistance = Math.abs(positionChange) * rowHeight;
@@ -119,9 +119,9 @@ function Row({ rank, teamname, points, elims, avg_place, wins, games, order, sho
     return (
         <div className={getRowClasses()} style={{ 
             '--animation-order': order,
-            opacity: cascadeFadeEnabled ? 0 : (animationEnabled && hasPositionChanged) ? 0 : 1,
-            animation: cascadeFadeEnabled ? 'fadeIn 0.8s forwards' : (animationEnabled && hasPositionChanged) ? 'fadeIn 0.5s forwards' : 'none',
-            animationDelay: cascadeFadeEnabled ? `${cascadeIndex * 0.1}s` : (animationEnabled && hasPositionChanged) ? `calc(var(--animation-order) * 0.1s)` : '0s',
+            opacity: cascadeFadeEnabled ? 0 : 1,
+            animation: cascadeFadeEnabled ? 'fadeIn 0.8s forwards' : 'none',
+            animationDelay: cascadeFadeEnabled ? `${cascadeIndex * 0.1}s` : '0s',
             ...getAnimationStyle()
         }}>
             <div className='rank_container' style={{
@@ -145,9 +145,25 @@ function Row({ rank, teamname, points, elims, avg_place, wins, games, order, sho
             {showGamesColumn && <div className='info_box'>{games}</div>}
         </div>
     );
-}
+}, (prevProps, nextProps) => {
+    return (
+        prevProps.rank === nextProps.rank &&
+        prevProps.teamname === nextProps.teamname &&
+        prevProps.points === nextProps.points &&
+        prevProps.elims === nextProps.elims &&
+        prevProps.avg_place === nextProps.avg_place &&
+        prevProps.wins === nextProps.wins &&
+        prevProps.games === nextProps.games &&
+        prevProps.showGamesColumn === nextProps.showGamesColumn &&
+        prevProps.positionChange === nextProps.positionChange &&
+        prevProps.showPositionIndicators === nextProps.showPositionIndicators &&
+        prevProps.animationEnabled === nextProps.animationEnabled &&
+        prevProps.hasPositionChanged === nextProps.hasPositionChanged &&
+        prevProps.cascadeFadeEnabled === nextProps.cascadeFadeEnabled
+    );
+});
 
-function Leaderboard2R() {
+function LeaderboardLyost() {
     const location = useLocation();
     const urlParams = new URLSearchParams(location.search);
     const leaderboard_id = urlParams.get('id');
@@ -158,7 +174,7 @@ function Leaderboard2R() {
     const [localPage, setLocalPage] = useState(0); 
     const [totalApiPages, setTotalApiPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState(""); 
-    const [showSearch, setShowSearch] = useState(false); 
+    const [showSearch, setShowSearch] = useState(true); 
 
     const [showGamesColumn, setShowGamesColumn] = useState(false);
     const [selectedTeam, setSelectedTeam] = useState(null);
@@ -169,6 +185,7 @@ function Leaderboard2R() {
     const [hasRefreshedOnce, setHasRefreshedOnce] = useState(false);
     const [animationEnabled, setAnimationEnabled] = useState(false);
     const [cascadeFadeEnabled, setCascadeFadeEnabled] = useState(cascadeParam === 'true');
+    const [previousLeaderboard, setPreviousLeaderboard] = useState(null);
 
     useEffect(() => {
         const handleKeyPress = (event) => {
@@ -280,33 +297,23 @@ function Leaderboard2R() {
                         }
                     }
                 });
-                
-                // Optimisation avancée: mise à jour sélective pour éviter les clignotements
                 let updatedLeaderboardData;
-                const previousLeaderboard = leaderboard;
-                
                 if (previousLeaderboard) {
-                    // Toujours partir du leaderboard existant pour éviter les re-rendus complets
                     updatedLeaderboardData = allLeaderboardData.map(team => {
                         const existingTeam = previousLeaderboard.find(prev => prev.teamname === team.teamname);
-                        
-                        // Si l'équipe existe déjà et que seules les données ont changé (pas la position)
                         if (existingTeam && existingTeam.place === team.place) {
-                            // Vérifier si les données ont réellement changé
                             const dataChanged = existingTeam.points !== team.points || 
                                               existingTeam.elims !== team.elims || 
                                               existingTeam.wins !== team.wins || 
                                               existingTeam.games !== team.games;
                             
                             if (!dataChanged) {
-                                // Aucun changement, garder l'objet existant
                                 return {
                                     ...existingTeam,
                                     positionChange: newIndicators[team.teamname] || existingTeam.positionChange || 0,
                                     hasPositionChanged: changedTeams.has(team.teamname)
                                 };
                             } else {
-                                // Seulement les données ont changé, pas la position
                                 return {
                                     ...existingTeam,
                                     points: team.points,
@@ -319,7 +326,6 @@ function Leaderboard2R() {
                                 };
                             }
                         } else {
-                            // Nouvelle équipe ou changement de position
                             return {
                                 ...team,
                                 positionChange: newIndicators[team.teamname] || 0,
@@ -329,7 +335,6 @@ function Leaderboard2R() {
                         }
                     });
                 } else {
-                    // Premier chargement
                     updatedLeaderboardData = allLeaderboardData.map(team => {
                         return {
                             ...team,
@@ -348,7 +353,6 @@ function Leaderboard2R() {
                 });
                 localStorage.setItem(storageKey, JSON.stringify(currentPositions));
                 localStorage.setItem(gamesStorageKey, JSON.stringify(currentGames));
-                
                 if (changedTeams.size > 0) {
                     localStorage.setItem(indicatorsStorageKey, JSON.stringify(newIndicators));
                 }
@@ -365,12 +369,13 @@ function Leaderboard2R() {
                     
                     setTimeout(() => {
                         setAnimationEnabled(false);
-                    }, 2000); // 2 secondes d'animation pour plus de fluidité 
+                    }, 2000); 
                 }
                 
                 setShowGamesColumn(hasMultipleGames);
                 setLeaderboard(updatedLeaderboardData);
                 setTeamDetails(allDetails);
+                setPreviousLeaderboard(updatedLeaderboardData);
             } catch (error) {
                 console.error('Error loading leaderboard data:', error);
             }
@@ -497,21 +502,35 @@ function Leaderboard2R() {
     const displayedLeaderboard = filteredLeaderboard.slice(startIndex, endIndex);
 
     return (
-        <div className='summer2r_cup'>
+        <div className='lyost'>
 
             {showSearch && (
                 <div className='search_container'>
                     <input
                         type="text"
-                        placeholder="Rechercher une équipe"
+                        placeholder="Rechercher un joueur"
                         className="search_input"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
             )}
-            
+
             <div className='leaderboard_container'>
+                <div className='leaderboard_title' style={{
+                    fontFamily: 'Eurostile',
+                    fontSize: '32px',
+                    color: '#fff',
+                    textAlign: 'center',
+                    paddingTop: '50px',
+                    marginBottom: '20px',
+                    fontWeight: 'bold',
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}>Classement Massilia Cup by Lyost Esport</div>
+
                 <div className='leaderboard_table'>
                     <div className='header_container'>
                         <div className='rank_header' onClick={previousPage}>PLACE</div>
@@ -542,7 +561,7 @@ function Leaderboard2R() {
                         
                         return (
                             <Row
-                                key={`${apiPage}-${localPage}-${index}`}
+                                key={data.teamId || data.teamname}
                                 rank={data.place}
                                 teamname={data.teamname}
                                 points={data.points}
@@ -661,4 +680,4 @@ function Leaderboard2R() {
     );
 }
 
-export default Leaderboard2R;
+export default LeaderboardLyost;

@@ -4,9 +4,12 @@ import { HashRouter as Router, Route, Routes  } from 'react-router-dom';
 import LeaderboardWolt from './LeaderboardWolt';
 import LeaderboardReddyshRoyale from './LeaderboardReddyshRoyale'
 import LeaderboardStizoCup from './LeaderboardStizoCup'
+import LeaderboardCDFSly from './LeaderboardCDFSly';
 import LeaderboardCDF from './LeaderboardCDF';
+
 import Leaderboard2R from './Leaderboard2R';
 import LeaderboardSolary from './LeaderboardSolary';
+import LeaderboardLyost from './LeaderboardLyost';
 import LeaderboardReload from './LeaderboardReload';
 
 
@@ -23,9 +26,11 @@ function App() {
           <Route path="/stizo_leaderboard" element={<LeaderboardStizoCup />} />
           <Route path="/twitch_polls" element={<TwitchPolls />} />
           <Route path="/cdf_leaderboard" element={<LeaderboardCDF />} />
+          <Route path="/cdfsly_leaderboard" element={<LeaderboardCDFSly />} />
           <Route path="/reload_leaderboard" element={<LeaderboardReload />} />
           <Route path="/2r_leaderboard" element={<Leaderboard2R />} />
           <Route path="/solary_leaderboard" element={<LeaderboardSolary />} />
+          <Route path="/lyost_leaderboard" element={<LeaderboardLyost />} />
 
         </Routes >
       </Router>
