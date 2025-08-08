@@ -21,14 +21,17 @@
 .lyost .leaderboard_container {
   width: 1920px;
   height: 1080px;
-  background: linear-gradient(to bottom,
+  /* background: linear-gradient(to bottom,
   #132849 0%,
   #194d72 15%,
   #3c7aa1 30%,
   #65a4c7 50%,
   #83b9d8 70%,
-  #b8ddf0 100%);  /* Couleur de fond */
-  /*background-image: url("");  Image de fond */
+  #b8ddf0 100%);  Couleur de fond */
+  background-image: url("lyost_leaderboard.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;  
 }
 
 .lyost .row_container {
