@@ -10,7 +10,7 @@ const SOLARY_TEAMS = [
     'Baloudagoat',
     'parosae',
     'kyvt',
-    'Kriko',
+    'wyloff',
     'KIRUMA',
     'patchitooo',
     'fazenfnr',
