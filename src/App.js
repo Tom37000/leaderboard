@@ -6,6 +6,7 @@ import LeaderboardReddyshRoyale from './LeaderboardReddyshRoyale'
 import LeaderboardStizoCup from './LeaderboardStizoCup'
 import LeaderboardCDFSly from './LeaderboardCDFSly';
 import LeaderboardCDF from './LeaderboardCDF';
+import LeaderboardSlyHvK from './LeaderboardSlyHvK';
 
 import Leaderboard2R from './Leaderboard2R';
 import LeaderboardSolary from './LeaderboardSolary';
@@ -27,6 +28,7 @@ function App() {
           <Route path="/twitch_polls" element={<TwitchPolls />} />
           <Route path="/cdf_leaderboard" element={<LeaderboardCDF />} />
           <Route path="/cdfsly_leaderboard" element={<LeaderboardCDFSly />} />
+          <Route path="/sly_hvk_leaderboard" element={<LeaderboardSlyHvK />} />
           <Route path="/reload_leaderboard" element={<LeaderboardReload />} />
           <Route path="/2r_leaderboard" element={<Leaderboard2R />} />
           <Route path="/solary_leaderboard" element={<LeaderboardSolary />} />

@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/leaderboard/build/static/css/main.33a0072a.css",
-    "main.js": "/leaderboard/build/static/js/main.2623d317.js",
+    "main.css": "/leaderboard/build/static/css/main.f4cc682f.css",
+    "main.js": "/leaderboard/build/static/js/main.7e9e00ce.js",
     "static/js/453.98276a77.chunk.js": "/leaderboard/build/static/js/453.98276a77.chunk.js",
     "static/media/stizo_cup_honda_background.png": "/leaderboard/build/static/media/stizo_cup_honda_background.f9604cfe7796019e0866.png",
     "static/media/lyost_leaderboard.png": "/leaderboard/build/static/media/lyost_leaderboard.e240f2e8ac69cfcb0ffa.png",
@@ -12,15 +12,17 @@
     "static/media/OmnesSemiBold.ttf": "/leaderboard/build/static/media/OmnesSemiBold.d9e74f703b27c9c45d13.ttf",
     "static/media/wolt_character.png": "/leaderboard/build/static/media/wolt_character.749771f67862b91fb4db.png",
     "static/media/OmnesBlack.ttf": "/leaderboard/build/static/media/OmnesBlack.c4d8a67bd6359132ef90.ttf",
+    "static/media/solary.png": "/leaderboard/build/static/media/solary.aabb80d69f4980009ffb.png",
+    "static/media/havok.png": "/leaderboard/build/static/media/havok.e510328687d945ecaff0.png",
     "static/media/Eurostile.otf": "/leaderboard/build/static/media/Eurostile.5af602eec7a5fddc3fd4.otf",
     "static/media/good_times.OTF": "/leaderboard/build/static/media/good_times.a86d4f7f5cdb8cf2e409.OTF",
     "index.html": "/leaderboard/build/index.html",
-    "main.33a0072a.css.map": "/leaderboard/build/static/css/main.33a0072a.css.map",
-    "main.2623d317.js.map": "/leaderboard/build/static/js/main.2623d317.js.map",
+    "main.f4cc682f.css.map": "/leaderboard/build/static/css/main.f4cc682f.css.map",
+    "main.7e9e00ce.js.map": "/leaderboard/build/static/js/main.7e9e00ce.js.map",
     "453.98276a77.chunk.js.map": "/leaderboard/build/static/js/453.98276a77.chunk.js.map"
   },
   "entrypoints": [
-    "/leaderboard/static/css/main.33a0072a.css",
-    "/leaderboard/static/js/main.2623d317.js"
+    "/leaderboard/static/css/main.f4cc682f.css",
+    "/leaderboard/js/main.7e9e00ce.js"
   ]
 }

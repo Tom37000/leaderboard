@@ -157,8 +157,11 @@ html, body {
 }
 
 .leaderboard_container {
-  width: 1920px;
-  height: 1080px;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* Styles pour les changements de position */
