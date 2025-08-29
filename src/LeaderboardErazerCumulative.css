@@ -76,7 +76,6 @@
   font-size: 26px;
 }
 
-/* Couleur spéciale pour les 25 premiers pseudos */
 .erazer_cup_cumulative .leaderboard_table .row_container.top-25 .name_container {
   color: #f15c86 !important;
 }

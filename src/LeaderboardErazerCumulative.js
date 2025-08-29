@@ -78,17 +78,128 @@ function LeaderboardErazerCumulative() {
     const [showGamesColumn, setShowGamesColumn] = useState(false);
 
     const [cascadeFadeEnabled, setCascadeFadeEnabled] = useState(cascadeParam === 'true');
+    const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
         const handleKeyPress = (event) => {
             if (event.key === 'F8') {
                 setCascadeFadeEnabled(prev => !prev);
+            } else if (event.key === 'F2') {
+                exportToCSV();
             }
         };
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, []);
+    }, [leaderboard]);
+
+    const exportToCSV = async () => {
+        if (!leaderboard || isExporting) return;
+        
+        setIsExporting(true);
+        
+        try {
+            const top50 = leaderboard.slice(0, 50);
+            const csvData = [];
+            
+            csvData.push(['Rank', 'Team Name', 'Points', 'Elims', 'Wins', 'Games', 'Avg Place', 'WLS Names', 'User IDs', 'Discord IDs']);
+            
+            for (const team of top50) {
+                try {
+                    const teamNames = team.teamname.split(' - ');
+                    const wlsData = [];
+                    
+                    for (const name of teamNames) {
+                        try {
+                            const response = await fetch(`https://api.wls.gg/users/name/${encodeURIComponent(name)}`);
+                            if (response.ok) {
+                                const userData = await response.json();
+                                
+                                let discordId = 'N/A';
+                                if (userData.connections) {
+                                    const discordConnection = Object.values(userData.connections).find(conn => conn.provider === 'discord');
+                                    if (discordConnection) {
+                                        discordId = discordConnection.id;
+                                    }
+                                }
+                                
+                                wlsData.push({
+                                    name: name,
+                                    id: userData.id || 'N/A',
+                                    discord_id: discordId
+                                });
+                            } else {
+                                wlsData.push({
+                                    name: name,
+                                    id: 'N/A',
+                                    discord_id: 'N/A'
+                                });
+                            }
+                        } catch (error) {
+                            console.warn(`Erreur pour ${name}:`, error);
+                            wlsData.push({
+                                name: name,
+                                id: 'N/A',
+                                discord_id: 'N/A'
+                            });
+                        }
+                        
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    
+                    const wlsNames = wlsData.map(d => d.name).join('; ');
+                    const userIds = wlsData.map(d => d.id).join('; ');
+                    const discordIds = wlsData.map(d => d.discord_id).join('; ');
+                    
+                    csvData.push([
+                        team.place,
+                        team.teamname,
+                        team.points,
+                        team.elims,
+                        team.wins,
+                        team.games,
+                        team.avg_place.toFixed(2),
+                        wlsNames,
+                        userIds,
+                        discordIds
+                    ]);
+                } catch (error) {
+                    console.error(`Erreur pour l'équipe ${team.teamname}:`, error);
+                    csvData.push([
+                        team.place,
+                        team.teamname,
+                        team.points,
+                        team.elims,
+                        team.wins,
+                        team.games,
+                        team.avg_place.toFixed(2),
+                        'Erreur',
+                        'Erreur',
+                        'Erreur'
+                    ]);
+                }
+            }
+            const csvContent = csvData.map(row => 
+                row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+            ).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `leaderboard_export_${new Date().toISOString().slice(0, 10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+        } catch (error) {
+            console.error('Erreur lors de l\'export CSV:', error);
+            alert('Erreur lors de l\'export CSV. Vérifiez la console pour plus de détails.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const getCachedData = (cacheKey) => {
         try {
             const cached = localStorage.getItem(cacheKey);
@@ -237,6 +348,14 @@ function LeaderboardErazerCumulative() {
                 finalLeaderboardData.sort((a, b) => {
                     if (b.points !== a.points) {
                         return b.points - a.points;
+                    }
+                    if (b.wins !== a.wins) {
+                        return b.wins - a.wins;
+                    }
+                    const avgElimsA = a.games > 0 ? a.elims / a.games : 0;
+                    const avgElimsB = b.games > 0 ? b.elims / b.games : 0;
+                    if (avgElimsB !== avgElimsA) {
+                        return avgElimsB - avgElimsA;
                     }
                     return a.avg_place - b.avg_place;
                 });
@@ -395,6 +514,24 @@ function LeaderboardErazerCumulative() {
     return (
         <div className='erazer_cup_cumulative'>
             <img src={erazerLogo} alt="Erazer Logo" className="erazer_logo" />
+
+            {isExporting && (
+                <div style={{
+                    position: 'fixed',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    color: 'white',
+                    padding: '20px',
+                    borderRadius: '10px',
+                    zIndex: 1000,
+                    textAlign: 'center'
+                }}>
+                    <div>Export CSV en cours...</div>
+                    <div style={{ fontSize: '12px', marginTop: '10px' }}>Récupération des données WLS...</div>
+                </div>
+            )}
 
             {showSearch && (
                 <div className='search_container'>
