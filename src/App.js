@@ -14,6 +14,7 @@ import LeaderboardLyost from './LeaderboardLyost';
 import LeaderboardReload from './LeaderboardReload';
 import LeaderboardErazer from './LeaderboardErazer';
 import LeaderboardErazerCumulative from './LeaderboardErazerCumulative';
+import LeaderboardErazerCumulativeV2 from './LeaderboardErazerCumulativeV2';
 
 
 import TwitchPolls from './TwitchPolls';
@@ -37,6 +38,7 @@ function App() {
           <Route path="/lyost_leaderboard" element={<LeaderboardLyost />} />
           <Route path="/erazer_leaderboard" element={<LeaderboardErazer />} />
           <Route path="/erazer_cumulative_leaderboard" element={<LeaderboardErazerCumulative />} />
+          <Route path="/erazer_cumulative_leaderboard_v2" element={<LeaderboardErazerCumulativeV2 />} />
 
         </Routes >
       </Router>
