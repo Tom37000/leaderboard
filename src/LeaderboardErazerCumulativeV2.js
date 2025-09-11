@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from 'react-router-dom';
 import erazerLogo from './erazer-logo1.png';
 
-const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, cascadeFadeEnabled, cascadeIndex }) {
+const Row = React.memo(function Row({ rank, teamname, points, avg_elim, avg_place, wins, order, onClick, cascadeFadeEnabled, cascadeIndex }) {
 
     const getAnimationStyle = () => {
         return {};
@@ -39,9 +39,8 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
                 whiteSpace: 'nowrap'
             }} onClick={onClick}>{teamname}</div>
             <div className='info_box'>{avg_place.toFixed(2)}</div>
-            <div className='info_box'>{elims}</div>
+            <div className='info_box'>{avg_elim.toFixed(2)}</div>
             <div className='info_box'>{wins}</div>
-            {showGamesColumn && <div className='info_box'>{games}</div>}
             <div className='info_box'>{points}</div>
         </div>
     );
@@ -50,11 +49,9 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
         prevProps.rank === nextProps.rank &&
         prevProps.teamname === nextProps.teamname &&
         prevProps.points === nextProps.points &&
-        prevProps.elims === nextProps.elims &&
+        prevProps.avg_elim === nextProps.avg_elim &&
         prevProps.avg_place === nextProps.avg_place &&
         prevProps.wins === nextProps.wins &&
-        prevProps.games === nextProps.games &&
-        prevProps.showGamesColumn === nextProps.showGamesColumn &&
         prevProps.cascadeFadeEnabled === nextProps.cascadeFadeEnabled
     );
 });
@@ -100,81 +97,83 @@ function LeaderboardErazerCumulativeV2() {
         setIsExporting(true);
         
         try {
-            const top50 = leaderboard.slice(0, 50);
+            const top45 = leaderboard.slice(0, 45);
             const csvData = [];
             
-            csvData.push(['Rank', 'Team Name', 'Points', 'Elims', 'Wins', 'Games', 'Avg Place', 'WLS Names', 'User IDs', 'Discord IDs']);
+            csvData.push(['Rank', 'Team Name', 'Avg Place', 'Avg Elim', 'Wins', 'Points', 'Epic ID', 'Discord IDs']);
             
-            for (const team of top50) {
+            for (const team of top45) {
                 try {
-                    const teamNames = team.teamname.split(' - ');
-                    const wlsData = [];
+                    const teamPlayerNames = team.teamname.split(' - ');
+                    const epicIds = [];
+                const discordIds = [];
                     
-                    for (const name of teamNames) {
+                    for (const playerName of teamPlayerNames) {
                         try {
-                            const response = await fetch(`https://api.wls.gg/users/name/${encodeURIComponent(name)}`);
+                            const response = await fetch(`https://api.wls.gg/users/name/${encodeURIComponent(playerName)}`);
+                            console.log(`API call for ${playerName}:`, response.status);
                             if (response.ok) {
                                 const userData = await response.json();
+                                console.log(`Data for ${playerName}:`, userData);
                                 
+                                let epicId = 'N/A';
                                 let discordId = 'N/A';
+                                
                                 if (userData.connections) {
-                                    const discordConnection = Object.values(userData.connections).find(conn => conn.provider === 'discord');
-                                    if (discordConnection) {
-                                        discordId = discordConnection.id;
+                                    console.log(`Connections for ${playerName}:`, userData.connections);
+                                    
+                                    const epicConnection = Object.values(userData.connections).find(conn => conn.provider === 'epicgames');
+                                    if (epicConnection) {
+                                        epicId = epicConnection.name; 
                                     }
+                                    
+                                    const discordKey = Object.keys(userData.connections).find(key => key.startsWith('discord:'));
+                                    console.log(`Discord key for ${playerName}:`, discordKey);
+                                    if (discordKey) {
+                                        discordId = userData.connections[discordKey].id;
+                                        console.log(`Discord ID for ${playerName}:`, discordId);
+                                    }
+                                } else {
+                                    console.log(`No connections found for ${playerName}`);
                                 }
                                 
-                                wlsData.push({
-                                    name: name,
-                                    id: userData.id || 'N/A',
-                                    discord_id: discordId
-                                });
+                                epicIds.push(epicId);
+                                discordIds.push(discordId);
                             } else {
-                                wlsData.push({
-                                    name: name,
-                                    id: 'N/A',
-                                    discord_id: 'N/A'
-                                });
+                                epicIds.push(playerName); 
+                                discordIds.push('N/A');
                             }
                         } catch (error) {
-                            console.warn(`Erreur pour ${name}:`, error);
-                            wlsData.push({
-                                name: name,
-                                id: 'N/A',
-                                discord_id: 'N/A'
-                            });
+                            console.warn(`Erreur pour ${playerName}:`, error);
+                            epicIds.push(playerName); 
+                            discordIds.push('N/A');
                         }
                         
                         await new Promise(resolve => setTimeout(resolve, 100));
                     }
                     
-                    const wlsNames = wlsData.map(d => d.name).join('; ');
-                    const userIds = wlsData.map(d => d.id).join('; ');
-                    const discordIds = wlsData.map(d => d.discord_id).join('; ');
+                    const epicIdString = epicIds.join('; ');
+                    const discordIdString = discordIds.join('; ');
                     
                     csvData.push([
                         team.place,
                         team.teamname,
-                        team.points,
-                        team.elims,
-                        team.wins,
-                        team.games,
                         team.avg_place.toFixed(2),
-                        wlsNames,
-                        userIds,
-                        discordIds
+                        team.avg_elim.toFixed(2),
+                        team.wins,
+                        team.points,
+                        epicIdString,
+                        discordIdString
                     ]);
                 } catch (error) {
                     console.error(`Erreur pour l'équipe ${team.teamname}:`, error);
                     csvData.push([
                         team.place,
                         team.teamname,
-                        team.points,
-                        team.elims,
-                        team.wins,
-                        team.games,
                         team.avg_place.toFixed(2),
-                        'Erreur',
+                        team.avg_elim ? team.avg_elim.toFixed(2) : '0.00',
+                        team.wins,
+                        team.points,
                         'Erreur',
                         'Erreur'
                     ]);
@@ -229,9 +228,9 @@ function LeaderboardErazerCumulativeV2() {
         }
     };
 
-    const handleTeamClick = (teamname) => {
-        if (teamDetails[teamname]) {
-            const details = teamDetails[teamname];
+    const handleTeamClick = (teamKey, teamname) => {
+        if (teamDetails[teamKey]) {
+            const details = teamDetails[teamKey];
             let message = `Détails pour ${teamname}:\n\n`;
             
             details.forEach((detail, index) => {
@@ -275,19 +274,16 @@ function LeaderboardErazerCumulativeV2() {
                 let allDetails = {};
                 let hasMultipleGames = false;
                 
-                // Fonction pour ajouter un délai
                 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-                
-                // Fonction pour faire une requête avec retry
                 const fetchWithRetry = async (url, retries = 3, delayMs = 1000) => {
                     for (let i = 0; i < retries; i++) {
                         try {
-                            await delay(i * delayMs); // Délai progressif
+                            await delay(i * delayMs); 
                             const response = await fetch(url);
                             if (!response.ok) {
-                                if (response.status === 429) { // Rate limit
+                                if (response.status === 429) { 
                                     console.warn(`Rate limit atteint pour ${url}, tentative ${i + 1}/${retries}`);
-                                    await delay(2000 * (i + 1)); // Délai plus long pour rate limit
+                                    await delay(2000 * (i + 1)); 
                                     continue;
                                 }
                                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -300,11 +296,29 @@ function LeaderboardErazerCumulativeV2() {
                         }
                     }
                 };
-
+                const excludedPlayers = new Set();
+                
+                for (const leaderboard_id of leaderboard_ids) {
+                    console.log(`Collecte des top 25 pour le leaderboard: ${leaderboard_id}`);
+                    
+                    if (leaderboard_ids.indexOf(leaderboard_id) > 0) {
+                        await delay(500);
+                    }
+                    
+                    const firstData = await fetchWithRetry(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}?page=0`);
+                    if (firstData.teams) {
+                        const top25Teams = firstData.teams.filter(team => team.place <= 25);
+                        top25Teams.forEach(team => {
+                            Object.keys(team.members).forEach(memberId => {
+                                excludedPlayers.add(memberId);
+                            });
+                        });
+                    }
+                }
+                
+                console.log(`Joueurs exclus du classement de régularité: ${excludedPlayers.size}`);
                 for (const leaderboard_id of leaderboard_ids) {
                     console.log(`Chargement du leaderboard: ${leaderboard_id}`);
-                    
-                    // Délai entre chaque leaderboard pour éviter le rate limiting
                     if (leaderboard_ids.indexOf(leaderboard_id) > 0) {
                         await delay(500);
                     }
@@ -314,12 +328,10 @@ function LeaderboardErazerCumulativeV2() {
                     let leaderboardData = [];
                     
                     const totalPages = firstData.total_pages || 1;
-                    
-                    // Traitement séquentiel des pages pour éviter trop de requêtes simultanées
                     const allPagesData = [];
                     for (let page = 0; page < totalPages; page++) {
                         if (page > 0) {
-                            await delay(200); // Petit délai entre chaque page
+                            await delay(200); 
                         }
                         const pageData = await fetchWithRetry(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}?page=${page}`);
                         allPagesData.push(pageData);
@@ -332,22 +344,27 @@ function LeaderboardErazerCumulativeV2() {
                             const gamesCount = sessions.length;
                             const members = Object.values(data.teams[team].members);
                             members.sort((a, b) => a.id.localeCompare(b.id));
-                            const teamname = members.map(member => member.name).join(' - ');
+                            const teamKey = members.map(member => member.ingame_id).join(' - '); 
+                            const teamname = members.map(member => member.name).join(' - '); 
                             
                             if (gamesCount > 1) {
                                 hasMultipleGames = true;
                             }
-
-                            // Calcul des points selon le placement (top 26 = 100 pts, top 125 = 1 pt)
+                            const teamHasExcludedPlayer = members.some(member => excludedPlayers.has(member.id));
                             let regularityPoints = 0;
                             const teamPlace = data.teams[team].place;
-                            if (teamPlace >= 26 && teamPlace <= 125) {
+                            if (!teamHasExcludedPlayer && teamPlace > 25 && teamPlace <= 125) {
                                 regularityPoints = Math.max(1, 101 - (teamPlace - 25));
                             }
 
+                            const totalElims = sessions.map(session => session.kills).reduce((acc, curr) => acc + curr, 0);
+                            const avg_elim = gamesCount > 0 ? totalElims / gamesCount : 0;
+                            
                             leaderboardData.push({
+                                teamKey: teamKey,
                                 teamname: teamname,
-                                elims: sessions.map(session => session.kills).reduce((acc, curr) => acc + curr, 0),
+                                avg_elim: avg_elim,
+                                elims: totalElims,
                                 avg_place: sessions.reduce((acc, session) => acc + session.place, 0) / sessions.length,
                                 wins: sessions.map(session => session.place).reduce((acc, curr) => acc + (curr === 1 ? 1 : 0), 0),
                                 games: gamesCount,
@@ -356,11 +373,10 @@ function LeaderboardErazerCumulativeV2() {
                                 leaderboard_id: leaderboard_id
                             });
 
-                            // Stocker les détails pour le clic sur l'équipe
-                            if (!allDetails[teamname]) {
-                                allDetails[teamname] = [];
+                            if (!allDetails[teamKey]) {
+                                allDetails[teamKey] = [];
                             }
-                            allDetails[teamname].push({
+                            allDetails[teamKey].push({
                                 place: teamPlace,
                                 regularityPoints: regularityPoints,
                                 leaderboard_id: leaderboard_id
@@ -376,7 +392,7 @@ function LeaderboardErazerCumulativeV2() {
                         return b.points - a.points;
                     });
                     
-                    const filteredData = leaderboardData.filter(team => team.place >= 26 && team.place <= 125);
+                    const filteredData = leaderboardData.filter(team => team.points > 0);
                     
                     allCumulativeData = allCumulativeData.concat(filteredData);
                 }
@@ -384,18 +400,19 @@ function LeaderboardErazerCumulativeV2() {
                 const teamMap = new Map();
                 
                 allCumulativeData.forEach(team => {
-                    if (teamMap.has(team.teamname)) {
-                        const existing = teamMap.get(team.teamname);
+                    if (teamMap.has(team.teamKey)) {
+                        const existing = teamMap.get(team.teamKey);
                         console.log(`Addition pour ${team.teamname}: ${existing.points} + ${team.points} = ${existing.points + team.points}`);
                         existing.points += team.points;
                         existing.elims += team.elims;
                         existing.wins += team.wins;
                         existing.games += team.games;
+                        existing.teamname = team.teamname; 
                         const totalGames = existing.games;
                         existing.avg_place = ((existing.avg_place * (totalGames - team.games)) + (team.avg_place * team.games)) / totalGames;
                     } else {
                         console.log(`Nouvelle équipe ${team.teamname}: ${team.points} points`);
-                        teamMap.set(team.teamname, { ...team });
+                        teamMap.set(team.teamKey, { ...team });
                     }
                 });
                 
@@ -474,6 +491,10 @@ function LeaderboardErazerCumulativeV2() {
     function nextPageFromPoints() {
         const filteredLeaderboard = leaderboard
             ? leaderboard.filter(team => {
+                if (!searchQuery || searchQuery.trim() === '') {
+                    return true;
+                }
+                
                 if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
                     return true;
                 }
@@ -498,6 +519,10 @@ function LeaderboardErazerCumulativeV2() {
         if (showGamesColumn) {
             const filteredLeaderboard = leaderboard
                 ? leaderboard.filter(team => {
+                    if (!searchQuery || searchQuery.trim() === '') {
+                        return true;
+                    }
+                    
                     if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
                         return true;
                     }
@@ -553,6 +578,10 @@ function LeaderboardErazerCumulativeV2() {
 
     const filteredLeaderboard = leaderboard
         ? leaderboard.filter(team => {
+            if (!searchQuery || searchQuery.trim() === '') {
+                return true;
+            }
+            
             if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
                 return true;
             }
@@ -610,9 +639,8 @@ function LeaderboardErazerCumulativeV2() {
                         <div className='rank_header' onClick={previousPage}>RANK</div>
                         <div className='name_header'>TEAMS</div>
                         <div className='info_header' style={{ fontSize: '12px' }}>AVG PLACE</div>
-                        <div className='info_header'>ELIMS</div>
+                        <div className='info_header' style={{ fontSize: '12px' }}>AVG ELIM</div>
                         <div className='info_header'>WINS</div>
-                        {showGamesColumn && <div onClick={nextPageFromGames} className='info_header'>GAMES</div>}
                         <div className='info_header' onClick={nextPageFromPoints}>POINTS</div>
                     </div>
                     {displayedLeaderboard.map((data, index) => {
@@ -624,13 +652,11 @@ function LeaderboardErazerCumulativeV2() {
                                 rank={data.place}
                                 teamname={data.teamname}
                                 points={data.points}
-                                elims={data.elims}
+                                avg_elim={data.avg_elim}
                                 wins={data.wins}
-                                games={data.games}
                                 avg_place={data.avg_place}
                                 order={animationOrder}
-                                showGamesColumn={showGamesColumn}
-                                onClick={() => handleTeamClick(data.teamname)}
+                                onClick={() => handleTeamClick(data.teamKey, data.teamname)}
                                 cascadeFadeEnabled={cascadeFadeEnabled}
                                 cascadeIndex={index}
                             />

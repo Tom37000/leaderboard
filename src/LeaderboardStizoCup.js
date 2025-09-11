@@ -194,7 +194,7 @@ function LeaderboardStizoCup() {
                 const totalPages = firstData.total_pages || 1;
                 setTotalApiPages(totalPages);
                 
-                // Load all pages
+
                 const promises = [];
                 for (let page = 0; page < totalPages; page++) {
                     promises.push(
@@ -402,11 +402,11 @@ function LeaderboardStizoCup() {
         if (!leaderboardData) return [];
         
         return leaderboardData.filter(team => {
-            // Search by team name
+
             if (team.teamname.toLowerCase().includes(query.toLowerCase())) {
                 return true;
             }
-            // Search by position/rank
+
             if (!isNaN(query) && query.trim() !== '') {
                 const searchPosition = parseInt(query.trim());
                 if (team.place === searchPosition) {
