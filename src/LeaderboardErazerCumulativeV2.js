@@ -124,7 +124,7 @@ function LeaderboardErazerCumulativeV2() {
                                     
                                     const epicConnection = Object.values(userData.connections).find(conn => conn.provider === 'epicgames');
                                     if (epicConnection) {
-                                        epicId = epicConnection.name; 
+                                        epicId = epicConnection.id; 
                                     }
                                     
                                     const discordKey = Object.keys(userData.connections).find(key => key.startsWith('discord:'));
