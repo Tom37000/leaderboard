@@ -175,7 +175,7 @@ function LeaderboardSolary() {
     const [localPage, setLocalPage] = useState(0); 
     const [totalApiPages, setTotalApiPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState(""); 
-    const [showSearch, setShowSearch] = useState(true); 
+    const [showSearch, setShowSearch] = useState(false); 
 
     const [showGamesColumn, setShowGamesColumn] = useState(false);
     const [selectedTeam, setSelectedTeam] = useState(null);
@@ -521,7 +521,7 @@ function LeaderboardSolary() {
                 <div className='leaderboard_table'>
                     <div className='header_container'>
                         <div className='rank_header' onClick={previousPage}>PLACE</div>
-                        <div className='name_header'>JOUEURS</div>
+                        <div className='name_header'>ÉQUIPES</div>
                         <div className='info_header' style={{ fontSize: '12px' }}>AVG PLACE</div>
                         <div className='info_header'>ELIMS</div>
                         <div className='info_header'>WINS</div>
