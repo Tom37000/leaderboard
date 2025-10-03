@@ -13,8 +13,10 @@ import LeaderboardSolary from './LeaderboardSolary';
 import LeaderboardLyost from './LeaderboardLyost';
 import LeaderboardReload from './LeaderboardReload';
 import LeaderboardErazer from './LeaderboardErazer';
+import LeaderboardErazerV2 from './LeaderboardErazerV2';
 import LeaderboardErazerCumulative from './LeaderboardErazerCumulative';
 import LeaderboardErazerCumulativeV2 from './LeaderboardErazerCumulativeV2';
+import LeaderboardErazerCumulativeV3 from './LeaderboardErazerCumulativeV3';
 
 
 import TwitchPolls from './TwitchPolls';
@@ -37,8 +39,10 @@ function App() {
           <Route path="/solary_leaderboard" element={<LeaderboardSolary />} />
           <Route path="/lyost_leaderboard" element={<LeaderboardLyost />} />
           <Route path="/erazer_leaderboard" element={<LeaderboardErazer />} />
+          <Route path="/erazer_leaderboard_v2" element={<LeaderboardErazerV2 />} />
           <Route path="/erazer_cumulative_leaderboard" element={<LeaderboardErazerCumulative />} />
           <Route path="/erazer_cumulative_leaderboard_v2" element={<LeaderboardErazerCumulativeV2 />} />
+          <Route path="/erazer_cumulative_leaderboard_v3" element={<LeaderboardErazerCumulativeV3 />} />
 
         </Routes >
       </Router>
