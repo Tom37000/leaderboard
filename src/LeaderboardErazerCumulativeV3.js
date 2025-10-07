@@ -536,7 +536,11 @@ function LeaderboardErazerCumulativeV3() {
     }, [leaderboard_ids.join(',')]);
 
     const exportToCSV = async () => {
-        if (!leaderboard || isExporting) return;
+        if (isExporting) return;
+        if (!leaderboard || leaderboard.length === 0) {
+            alert("Aucun leaderboard chargé. Ajoutez ?ids=… dans l’URL (ex: #/erazer_cumulative_leaderboard_v3?ids=123,456) puis réessayez avec F2.");
+            return;
+        }
         
         setIsExporting(true);
         
