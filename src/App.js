@@ -17,7 +17,7 @@ import LeaderboardErazerV2 from './LeaderboardErazerV2';
 import LeaderboardErazerCumulative from './LeaderboardErazerCumulative';
 import LeaderboardErazerCumulativeV2 from './LeaderboardErazerCumulativeV2';
 import LeaderboardErazerCumulativeV3 from './LeaderboardErazerCumulativeV3';
-
+import OverlayJoueursEnvie from './overlay_joueurs_envie';
 
 import TwitchPolls from './TwitchPolls';
 
@@ -43,6 +43,7 @@ function App() {
           <Route path="/erazer_cumulative_leaderboard" element={<LeaderboardErazerCumulative />} />
           <Route path="/erazer_cumulative_leaderboard_v2" element={<LeaderboardErazerCumulativeV2 />} />
           <Route path="/erazer_cumulative_leaderboard_v3" element={<LeaderboardErazerCumulativeV3 />} />
+          <Route path="/overlay_joueurs_envie" element={<OverlayJoueursEnvie />} />
 
         </Routes >
       </Router>
