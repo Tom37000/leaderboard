@@ -33,8 +33,8 @@ function Row({ rank, teamname, points, elims, avg_place, wins, index, alive }) {
 
     return (
         <>
-            <div className={`rank ${alive ? '' : 'dimmed'} fade-in`}>{rank}</div>
-            <div className='name-and-vr fade-in' style={{ opacity: alive ? "1" : "0.5" }}>
+            <div className={`rank ${alive ? '' : 'dimmed'} fade-in`} style={{ animationDelay: `${index * 60}ms` }}>{rank}</div>
+            <div className='name-and-vr fade-in' style={{ opacity: alive ? "1" : "0.5", animationDelay: `${index * 60}ms` }}>
                 <div
                     className='name'
                     ref={nameRef}
@@ -81,6 +81,7 @@ function PopUpLeaderboard() {
 
     const [allEntries, setAllEntries] = useState([])
     const [page, setPage] = useState(0)
+    const [transition, setTransition] = useState('fade')
 
     useEffect(() => {
 
@@ -132,6 +133,7 @@ function PopUpLeaderboard() {
             : Math.min(50, allEntries.length);
         const totalPages = Math.max(0, Math.ceil(baseListLength / 10) - 1);
         if (page > totalPages) {
+            setTransition('fade');
             setPage(totalPages);
         }
     }, [allEntries, showAliveOnly]);
@@ -139,6 +141,7 @@ function PopUpLeaderboard() {
     useEffect(() => {
         if (!showAliveOnly) {
             const timer = setInterval(() => {
+                setTransition('next');
                 setPage(prev => {
                     const totalPages = Math.max(0, Math.ceil(Math.min(50, allEntries.length) / 10) - 1);
                     return (prev + 1) % (totalPages + 1);
@@ -149,12 +152,14 @@ function PopUpLeaderboard() {
     }, [showAliveOnly, allEntries.length]);
 
     function nextPage() {
+        setTransition('next');
         const baseListLength = showAliveOnly ? allEntries.filter(item => item.alive).length : Math.min(50, allEntries.length);
         const totalPages = Math.max(0, Math.ceil(baseListLength / 10) - 1);
         setPage(prev => (prev < totalPages ? prev + 1 : 0));
     }
 
     function previousPage() {
+        setTransition('prev');
         const baseListLength = showAliveOnly ? allEntries.filter(item => item.alive).length : Math.min(50, allEntries.length);
         const totalPages = Math.max(0, Math.ceil(baseListLength / 10) - 1);
         setPage(prev => (prev > 0 ? prev - 1 : totalPages));
@@ -176,7 +181,7 @@ function PopUpLeaderboard() {
         }}>
 
             <div className='leaderboard_container_prod'>
-                <div className='leaderboard_table_prod'>
+                <div className={`leaderboard_table_prod page_transition ${transition === 'next' ? 'slide-left' : transition === 'prev' ? 'slide-right' : 'fade'}`} key={`page-${page}`}>
 
                     <div className='rank header' style={{ background: headerBg }} onClick={previousPage}>#</div>
                     <div className='name-and-vr header' style={{ background: headerBg }}>

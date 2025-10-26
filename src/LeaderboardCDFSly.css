@@ -20,7 +20,8 @@
 
 .cdfsly .leaderboard_container {
   width: 1920px;
-  height: 1080px;
+  height: 100vh;
+  overflow-y: auto;
   background: linear-gradient(135deg, #020b2e 0%, #2e3fec 60%, #d8f2fe 150%);
 }
 

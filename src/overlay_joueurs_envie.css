@@ -480,10 +480,43 @@ body {
   justify-content: flex-end;
 }
 
+.overlay_joueurs_ .page_transition { 
+  will-change: transform, opacity; 
+}
+.overlay_joueurs_ .page_transition.fade { 
+  animation: overlay-page-fade 300ms ease both; 
+}
+.overlay_joueurs_ .page_transition.slide-left { 
+  animation: overlay-page-slide-left 350ms ease both; 
+}
+.overlay_joueurs_ .page_transition.slide-right { 
+  animation: overlay-page-slide-right 350ms ease both; 
+}
+
+@keyframes overlay-page-fade { 
+  from { opacity: 0; } 
+  to { opacity: 1; } 
+}
+@keyframes overlay-page-slide-left { 
+  from { opacity: 0; transform: translateX(20px); } 
+  to { opacity: 1; transform: translateX(0); } 
+}
+@keyframes overlay-page-slide-right { 
+  from { opacity: 0; transform: translateX(-20px); } 
+  to { opacity: 1; transform: translateX(0); } 
+}
+
 .fade-in {
-  animation: overlay-fade-in 600ms ease;
+  animation: overlay-fade-in 600ms ease both;
 }
 @keyframes overlay-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+.overlay_joueurs_ .leaderboard_table_prod .name-and-vr.header .name.header {
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+  transform: translateX(-6px);
 }

@@ -4,7 +4,8 @@ import { useLocation } from 'react-router-dom';
 
 const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive}) {
     const renderPositionChange = () => {
-        if (!showPositionIndicators) {
+
+        if (!showPositionIndicators || alive || games < 2) {
             return null;
         }
         
@@ -40,7 +41,7 @@ const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, w
                 display: 'inline-block',
                 marginLeft: '0px',
                 position: 'absolute',
-                right: '-11px',
+                right: '-18px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 pointerEvents: 'none'
@@ -70,8 +71,9 @@ const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, w
             }
         };
 
+
         if (positionChange === 0) {
-            return null;
+            return <span className="position_change neutral" style={getIndicatorStyle('neutral', '=')}>=</span>;
         }
         if (positionChange > 0) {
             return <span className="position_change positive" style={getIndicatorStyle('positive', `+${positionChange}`)}>+{positionChange}</span>;
@@ -283,8 +285,8 @@ function LeaderboardCDFSLY() {
                 if (!team.alive) {
                     if (prev && team.games === (prev.games || 0) + 1) {
                         const change = (prev.place || team.place) - team.place;
+                        newIndicators[team.teamname] = change === 0 ? 0 : change;
                         if (change !== 0) {
-                            newIndicators[team.teamname] = change;
                             changedTeams.add(team.teamname);
                             hasChanges = true;
                         }
@@ -349,7 +351,9 @@ function LeaderboardCDFSLY() {
             }
             
             const shouldShowIndicators = Object.keys(newIndicators).length > 0;
-            setShowPositionIndicators(shouldShowIndicators);
+            const allDead = updatedLeaderboardData.length > 0 && updatedLeaderboardData.every(team => !team.alive);
+
+            setShowPositionIndicators(allDead);
             setHasRefreshedOnce(true);
             
             if (hasChanges && changedTeams.size > 0) {
@@ -486,43 +490,55 @@ function LeaderboardCDFSLY() {
             setLocalPage(localPage - 1);
         }
     }
-    const filteredLeaderboard = leaderboard.filter(team => {
-        if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
-            return true;
-        }
-        if (!isNaN(searchQuery) && searchQuery.trim() !== '') {
-            const searchPosition = parseInt(searchQuery.trim());
-            if (team.place === searchPosition) {
+
+    useEffect(() => {
+        const supportSinglePage = totalApiPages === 1;
+        setShowGamesColumn(supportSinglePage);
+    }, [totalApiPages]);
+
+    const getFilteredLeaderboard = () => {
+        if (!searchQuery) return leaderboard;
+        return leaderboard.filter(team => {
+            if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
                 return true;
             }
-        }
-        if (teamDetails[team.teamname] && teamDetails[team.teamname].members) {
-            return teamDetails[team.teamname].members.some(member => 
-                member.ingame_name && member.ingame_name.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
-        return false;
-    });
-    const startIndex = localPage * 10;
-    const endIndex = startIndex + 10;
-    const displayedLeaderboard = filteredLeaderboard.slice(startIndex, endIndex);
+            if (!isNaN(searchQuery) && searchQuery.trim() !== '') {
+                const searchPosition = parseInt(searchQuery.trim());
+                if (team.place === searchPosition) {
+                    return true;
+                }
+            }
+            if (teamDetails[team.teamname] && teamDetails[team.teamname].members) {
+                return teamDetails[team.teamname].members.some(member => 
+                    member.ingame_name && member.ingame_name.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+            }
+            return false;
+        });
+    };
+
+    const currentPage = Math.floor((apiPage) + localPage);
+    const pageSize = 10;
+    const filteredLeaderboard = getFilteredLeaderboard();
+
+    const displayedLeaderboard = filteredLeaderboard.slice(currentPage * pageSize, (currentPage * pageSize) + pageSize);
 
     return (
         <div className='cdfsly'>
-
-            {showSearch && (
-                <div className='search_container'>
-                    <input
-                        type="text"
-                        placeholder="Rechercher un joueur"
-                        className="search_input"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-            )}
-            
             <div className='leaderboard_container'>
+
+                {showSearch && (
+                    <div className='search_container'>
+                        <input
+                            type='text'
+                            className='search_input'
+                            value={searchQuery}
+                            placeholder='Tapez un nom de joueur ou place'
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                )}
+
                 <div className='leaderboard_title' style={{
                     fontFamily: 'Eurostile',
                     fontSize: '32px',
@@ -584,103 +600,98 @@ function LeaderboardCDFSLY() {
                             />
                         );
                     })}
+                    
+                    {selectedTeam && teamDetails[selectedTeam] && (
+                        <div className='modal_overlay' onClick={closeModal}>
+                            <div className='modal_content' onClick={(e) => e.stopPropagation()}>
+                                <div className='modal_header'>
+                                    <h2>Stats détaillées - {selectedTeam}</h2>
+                                    <button className='close_button' onClick={closeModal}>×</button>
+                                </div>
+                                <div className='modal_body'>
+                                    <div className='team_summary'>
+                                        <h3>Résumé de l'équipe :</h3>
+                                        <div className='team_stats'>
+                                            <div className='stat_item'>
+                                                <span className='stat_label'>Position:</span>
+                                                <span className='stat_value'>#{teamDetails[selectedTeam].teamData.place}</span>
+                                            </div>
+                                            <div className='stat_item'>
+                                                <span className='stat_label'>Points actuels :</span>
+                                                <span className='stat_value'>{teamDetails[selectedTeam].teamData.points}</span>
+                                            </div>
+                                            <div className='stat_item'>
+                                                <span className='stat_label'>Parties jouées :</span>
+                                                <span className='stat_value'>{teamDetails[selectedTeam].sessions.length}</span>
+                                            </div>
+                                            <div className='stat_item'>
+                                                <span className='stat_label'>Victoires:</span>
+                                                <span className='stat_value'>{teamDetails[selectedTeam].sessions.filter(s => s.place === 1).length}</span>
+                                            </div>
+                                            <div className='stat_item'>
+                                                <span className='stat_label'>Top 3:</span>
+                                                <span className='stat_value'>{teamDetails[selectedTeam].sessions.filter(s => s.place <= 3).length}</span>
+                                            </div>
+                                            <div className='stat_item'>
+                                                <span className='stat_label'>Élims totales:</span>
+                                                <span className='stat_value'>{teamDetails[selectedTeam].sessions.reduce((acc, s) => acc + s.kills, 0)}</span>
+                                            </div>
+                                            <div className='stat_item'>
+                                                <span className='stat_label'>Place moyenne:</span>
+                                                <span className='stat_value'>{(teamDetails[selectedTeam].sessions.reduce((acc, s) => acc + s.place, 0) / teamDetails[selectedTeam].sessions.length).toFixed(2)}</span>
+                                            </div>
+                                            <div className='stat_item'>
+                                                <span className='stat_label'>Élims/partie:</span>
+                                                <span className='stat_value'>{(teamDetails[selectedTeam].sessions.reduce((acc, s) => acc + s.kills, 0) / teamDetails[selectedTeam].sessions.length).toFixed(2)}</span>
+                                            </div>
+                                            <div className='stat_item'>
+                                                <span className='stat_label'>Meilleure place:</span>
+                                                <span className='stat_value'>{Math.min(...teamDetails[selectedTeam].sessions.map(s => s.place))}</span>
+                                            </div>
+                                            <div className='stat_item'>
+                                                <span className='stat_label'>Pire place:</span>
+                                                <span className='stat_value'>{Math.max(...teamDetails[selectedTeam].sessions.map(s => s.place))}</span>
+                                            </div>
+                                            <div className='stat_item'>
+                                                <span className='stat_label'>Max élims/partie:</span>
+                                                <span className='stat_value'>{Math.max(...teamDetails[selectedTeam].sessions.map(s => s.kills))}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className='members_section'>
+                                        <h3>Membre(s) de l'équipe :</h3>
+                                        <div className='members_list'>
+                                            {teamDetails[selectedTeam].members.map((member, index) => (
+                                                <div key={index} className='member_item'>
+                                                    <span className='member_name'>{member.name}</span>
+                                                    {member.ingame && <span className='member_ingame'>{member.ingame}</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className='sessions_section'>
+                                        <h3>Historique détaillé des games :</h3>
+                                        <div className='sessions_table'>
+                                            <div className='session_header'>
+                                                <div>Game</div>
+                                                <div>Place</div>
+                                                <div>Éliminations</div>
+                                            </div>
+                                            {teamDetails[selectedTeam].sessions.map((session, index) => (
+                                                <div key={index} className='session_row'>
+                                                    <div className='session_highlight'>{index + 1}</div>
+                                                    <div className={`place_${session.place <= 3 ? 'top' : session.place <= 10 ? 'good' : 'normal'}`}>{session.place}</div>
+                                                    <div className='session_highlight'>{session.kills}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
-
             </div>
-
-
-
-            {selectedTeam && teamDetails[selectedTeam] && (
-                <div className='modal_overlay' onClick={closeModal}>
-                    <div className='modal_content' onClick={(e) => e.stopPropagation()}>
-                        <div className='modal_header'>
-                            <h2>Stats détaillées - {selectedTeam}</h2>
-                            <button className='close_button' onClick={closeModal}>×</button>
-                        </div>
-                        <div className='modal_body'>
-                            <div className='team_summary'>
-                                <h3>Résumé de l'équipe :</h3>
-                                <div className='stats_grid'>
-                                    <div className='stat_item'>
-                                        <span className='stat_label'>Position:</span>
-                                        <span className='stat_value'>#{teamDetails[selectedTeam].teamData.place}</span>
-                                    </div>
-                                    <div className='stat_item'>
-                                        <span className='stat_label'>Points totaux:</span>
-                                        <span className='stat_value'>{teamDetails[selectedTeam].teamData.points}</span>
-                                    </div>
-                                    <div className='stat_item'>
-                                        <span className='stat_label'>Parties jouées :</span>
-                                        <span className='stat_value'>{teamDetails[selectedTeam].sessions.length}</span>
-                                    </div>
-                                    <div className='stat_item'>
-                                        <span className='stat_label'>Victoires:</span>
-                                        <span className='stat_value'>{teamDetails[selectedTeam].sessions.filter(s => s.place === 1).length}</span>
-                                    </div>
-                                    <div className='stat_item'>
-                                        <span className='stat_label'>Top 3:</span>
-                                        <span className='stat_value'>{teamDetails[selectedTeam].sessions.filter(s => s.place <= 3).length}</span>
-                                    </div>
-                                    <div className='stat_item'>
-                                        <span className='stat_label'>Élims totales:</span>
-                                        <span className='stat_value'>{teamDetails[selectedTeam].sessions.reduce((acc, s) => acc + s.kills, 0)}</span>
-                                    </div>
-                                    <div className='stat_item'>
-                                        <span className='stat_label'>Place moyenne:</span>
-                                        <span className='stat_value'>{(teamDetails[selectedTeam].sessions.reduce((acc, s) => acc + s.place, 0) / teamDetails[selectedTeam].sessions.length).toFixed(2)}</span>
-                                    </div>
-                                    <div className='stat_item'>
-                                        <span className='stat_label'>Élims/partie:</span>
-                                        <span className='stat_value'>{(teamDetails[selectedTeam].sessions.reduce((acc, s) => acc + s.kills, 0) / teamDetails[selectedTeam].sessions.length).toFixed(2)}</span>
-                                    </div>
-                                    <div className='stat_item'>
-                                        <span className='stat_label'>Meilleure place:</span>
-                                        <span className='stat_value'>{Math.min(...teamDetails[selectedTeam].sessions.map(s => s.place))}</span>
-                                    </div>
-                                    <div className='stat_item'>
-                                        <span className='stat_label'>Pire place:</span>
-                                        <span className='stat_value'>{Math.max(...teamDetails[selectedTeam].sessions.map(s => s.place))}</span>
-                                    </div>
-                                    <div className='stat_item'>
-                                        <span className='stat_label'>Max élims/partie:</span>
-                                        <span className='stat_value'>{Math.max(...teamDetails[selectedTeam].sessions.map(s => s.kills))}</span>
-                                    </div>
-
-                                </div>
-                            </div>
-                            
-                            <div className='members_section'>
-                                <h3>Membre(s) de l'équipe :</h3>
-                                <div className='members_grid'>
-                                    {teamDetails[selectedTeam].members.map((member, index) => (
-                                        <div key={index} className='member_card'>
-                                            <strong>{member.name}</strong>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            <div className='sessions_section'>
-                                <h3>Historique détaillé des games :</h3>
-                                <div className='sessions_table'>
-                                    <div className='session_header'>
-                                        <div>Game</div>
-                                        <div>Place</div>
-                                        <div>Éliminations</div>
-                                    </div>
-                                    {teamDetails[selectedTeam].sessions.map((session, index) => (
-                                        <div key={index} className='session_row'>
-                                            <div className='session_highlight'>{index + 1}</div>
-                                            <div className={`place_${session.place <= 3 ? 'top' : session.place <= 10 ? 'good' : 'normal'}`}>{session.place}</div>
-                                            <div className='session_highlight'>{session.kills}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
