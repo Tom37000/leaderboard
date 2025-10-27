@@ -533,7 +533,7 @@ function LeaderboardCDFSLY() {
                             type='text'
                             className='search_input'
                             value={searchQuery}
-                            placeholder='Tapez un nom de joueur ou place'
+                            placeholder='Rechercher un joueur'
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
@@ -547,7 +547,7 @@ function LeaderboardCDFSLY() {
                     paddingTop: '50px',
                     marginBottom: '20px',
                     fontWeight: 'bold'
-                }}>Classement Détection Solary | Finale</div>
+                }}>Classement | Finale Centre de formation Solary</div>
 
                 <div className='leaderboard_table'>
                     <div className='header_container'>

@@ -19,33 +19,39 @@ function Row({ rank, teamname, points, elims, avg_place, wins, index, alive }) {
     useEffect(() => {
         const el = nameRef.current;
         if (!el) return;
-        let size = parseInt(computeNameFontSize(teamname)) || 18; 
-        const min = 11; 
+        let size = parseInt(computeNameFontSize(teamname)) || 18;
+        const min = 6;
         el.style.fontSize = `${size}px`;
-        let safety = 0;
-        while (el.scrollWidth > el.clientWidth && size > min && safety < 24) {
-            size -= 1;
-            el.style.fontSize = `${size}px`;
-            safety++;
+
+        const client = el.clientWidth;
+        const scroll = el.scrollWidth;
+
+        if (client > 0 && scroll > client) {
+            const scale = client / scroll;
+            let newSize = Math.max(min, Math.floor(size * scale));
+            el.style.fontSize = `${newSize}px`;
+
+            let safety = 0;
+            while (el.scrollWidth > el.clientWidth && newSize > min && safety < 10) {
+                newSize -= 1;
+                el.style.fontSize = `${newSize}px`;
+                safety++;
+            }
+            size = newSize;
         }
+
         setFontSizePx(size);
     }, [teamname]);
 
     return (
         <>
-            <div className={`rank ${alive ? '' : 'dimmed'} fade-in`} style={{ animationDelay: `${index * 60}ms` }}>{rank}</div>
-            <div className='name-and-vr fade-in' style={{ opacity: alive ? "1" : "0.5", animationDelay: `${index * 60}ms` }}>
+            <div className={`rank ${alive ? '' : 'dimmed'}`}>{rank}</div>
+            <div className={`name-and-vr ${alive ? 'alive' : 'dimmed'}`}>
                 <div
                     className='name'
                     ref={nameRef}
-                    style={{
-                        fontSize: `${fontSizePx}px`,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                    }}
+                    style={{ fontSize: `${fontSizePx}px` }}
                 >
-                    {alive ? <span className='alive-dot' /> : null}
                     {teamname}
                 </div>
                 <div className='info points'>{Math.round(points)}</div>
@@ -61,23 +67,18 @@ function PopUpLeaderboard() {
     const leaderboard_id = params.get('id');
     const aliveParam = params.get('alive');
     const onlyAlive = aliveParam === 'true' || aliveParam === '1';
-    
-    const headerBgParam = params.get('header_bg');
-    const headerBg = headerBgParam || '#194c9e';
-    const headerTextParam = params.get('header_text');
-    const headerText = headerTextParam || '#ffffff';
-    const rankBgParam = params.get('rank_bg');
-    const rankBg = rankBgParam || '#194c9e';
-    const rankTextParam = params.get('rank_text');
-    const rankText = rankTextParam || '#ffffff';
-    const nameBgParam = params.get('name_bg');
-    const nameBg = nameBgParam || 'rgba(0, 42, 181, 0.5)';
-    const nameTextParam = params.get('name_text');
-    const nameText = nameTextParam || '#ffffff';
-    const pointsTextParam = params.get('points_text');
-    const pointsText = pointsTextParam || '#ffffff';
-    const aliveDotParam = params.get('alive_dot');
-    const aliveDot = aliveDotParam || 'red';
+    const restoreFullOnEndParam = params.get('restore_full_on_end');
+    const restoreFullOnEnd = restoreFullOnEndParam === null
+        ? true 
+        : (restoreFullOnEndParam === 'true' || restoreFullOnEndParam === '1');
+
+    const simulateAliveParam = params.get('simulate_alive');
+    const simulateAliveRandomCountParam = params.get('simulate_alive_count');
+    const simulateAliveTopParam = params.get('simulate_alive_top');
+    const simulateAlive = simulateAliveParam === 'true' || simulateAliveParam === '1';
+    const simulateAliveCount = simulateAliveRandomCountParam
+        ? parseInt(simulateAliveRandomCountParam, 10)
+        : (simulateAliveTopParam ? parseInt(simulateAliveTopParam, 10) : 10);
 
     const [allEntries, setAllEntries] = useState([])
     const [page, setPage] = useState(0)
@@ -97,19 +98,37 @@ function PopUpLeaderboard() {
             })
                 .then((response) => response.json())
                 .then(data => {
+                    const safeEntries = Array.isArray(data?.queries?.[0]?.entries) ? data.queries[0].entries : [];
                     let leaderboard_list = []
-                    for (let team of data.queries[0].entries) {
+                    for (let team of safeEntries) {
+                        const members = team?.members ? Object.values(team.members) : [];
+                        const stats = team?.stats || {};
                         leaderboard_list.push({
-                            teamname: Object.values(team.members).map(member => member.name).sort().join(' - '),
-                            elims: team.stats[107],
-                            avg_place: team.stats[102],
-                            wins: team.stats[104],
-                            place: team.rank,
-                            points: team.stats[1],
-                            alive: (team.flags & 2) === 2
+                            teamname: members.map(member => member.name).sort().join(' - '),
+                            elims: stats[107] || 0,
+                            avg_place: stats[102] || 0,
+                            wins: stats[104] || 0,
+                            place: team?.rank || 0,
+                            points: stats[1] || 0,
+                            alive: (team?.flags & 2) === 2
                         })
                     }
                     leaderboard_list.sort((a, b) => (a.place - b.place) || (b.points - a.points))
+
+                    if (simulateAlive) {
+                        const n = Math.max(0, Math.min(leaderboard_list.length, isNaN(simulateAliveCount) ? 10 : simulateAliveCount));
+                        const indices = Array.from({ length: leaderboard_list.length }, (_, i) => i);
+                        for (let i = indices.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [indices[i], indices[j]] = [indices[j], indices[i]];
+                        }
+                        const picked = new Set(indices.slice(0, n));
+                        leaderboard_list = leaderboard_list.map((entry, idx) => ({
+                            ...entry,
+                            alive: entry.alive || picked.has(idx)
+                        }));
+                    }
+
                     setAllEntries(leaderboard_list)
                 }
 
@@ -125,7 +144,9 @@ function PopUpLeaderboard() {
     }, [leaderboard_id])
 
     const aliveCount = allEntries.filter(item => item.alive).length;
-    const showAliveOnly = onlyAlive || aliveCount <= 10;
+    const showAliveOnly = onlyAlive
+        ? true
+        : (aliveCount === 0 ? !restoreFullOnEnd : aliveCount <= 10);
 
     useEffect(() => {
         const baseListLength = showAliveOnly
@@ -169,22 +190,13 @@ function PopUpLeaderboard() {
     const displayed = baseList.slice(page * 10, page * 10 + 10);
 
     return (
-        <div className='overlay_joueurs_' style={{
-            "--header-bg-color": headerBg,
-            "--header-text-color": headerText,
-            "--rank-bg-color": rankBg,
-            "--rank-text-color": rankText,
-            "--name-bg-color": nameBg,
-            "--name-text-color": nameText,
-            "--points-text-color": pointsText,
-            "--alive-dot-color": aliveDot
-        }}>
+        <div className='overlay_joueurs_'>
 
             <div className='leaderboard_container_prod'>
-                <div className={`leaderboard_table_prod page_transition ${transition === 'next' ? 'slide-left' : transition === 'prev' ? 'slide-right' : 'fade'}`} key={`page-${page}`}>
+                <div className={`leaderboard_table_prod page_transition ${transition === 'next' ? 'slide-left' : transition === 'prev' ? 'slide-right' : ''}`} key={`page-${page}`}>
 
-                    <div className='rank header' style={{ background: headerBg }} onClick={previousPage}>#</div>
-                    <div className='name-and-vr header' style={{ background: headerBg }}>
+                    <div className='rank header' onClick={previousPage}>#</div>
+                    <div className='name-and-vr header'>
                         <div className='name header'>ÉQUIPES</div>
                         <div className='wins header' onClick={nextPage}>PTS</div>
                     </div>
