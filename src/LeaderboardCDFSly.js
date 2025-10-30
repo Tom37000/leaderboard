@@ -542,7 +542,7 @@ function LeaderboardCDFSLY() {
                 <div className='leaderboard_title' style={{
                     fontFamily: 'Eurostile',
                     fontSize: '32px',
-                    color: '#fff',
+                    color: '#28252c',
                     textAlign: 'center',
                     paddingTop: '50px',
                     marginBottom: '20px',
@@ -552,7 +552,7 @@ function LeaderboardCDFSLY() {
                 <div className='leaderboard_table'>
                     <div className='header_container'>
                         <div className='rank_header' onClick={previousPage}>PLACE</div>
-                        <div className='name_header'>ÉQUIPE</div>
+                        <div className='name_header'>ÉQUIPES</div>
                         <div style={{fontSize: '13px'}} className='info_header'>AVG PLACE</div>
                         <div className='info_header'>ELIMS</div>
                         <div className='info_header'>WINS</div>

@@ -11,9 +11,11 @@ body {
 
 :root {
   --overlay-bg-color: transparent;
-  --header-bg-gradient: linear-gradient(180deg, #a6ddff 0%, #68c1f8 100%);
+  /* --header-bg-gradient: linear-gradient(180deg, #a6ddff 0%, #68c1f8 100%); */
+  --header-bg-gradient: #0326d5;
   --header-text-color: #ffffff;
-  --rank-bg-color: linear-gradient(180deg, #a6ddff 0%, #68c1f8 100%);
+  /* --rank-bg-color: linear-gradient(180deg, #a6ddff 0%, #68c1f8 100%); */
+  --rank-bg-color: #0326d5;
   --rank-text-color: #ffffff;
   --name-bg-color: rgba(0, 42, 181, 0.5);
   --name-text-color: #ffffff; 
