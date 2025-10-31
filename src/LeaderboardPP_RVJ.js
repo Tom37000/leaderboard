@@ -30,6 +30,8 @@ const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, w
                 padding = '2px 3px';
             }
             
+            const rankDigits = String(rank).length;
+            const indicatorRightOffset = -26 - (rankDigits > 1 ? 6 * (rankDigits - 1) : 0);
             const baseStyle = {
                 padding: padding,
                 borderRadius: '3px',
@@ -41,7 +43,7 @@ const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, w
                 display: 'inline-block',
                 marginLeft: '0px',
                 position: 'absolute',
-                right: '-26px',
+                right: `${indicatorRightOffset}px`,
                 top: '50%',
                 transform: 'translateY(-50%)',
                 pointerEvents: 'none'
