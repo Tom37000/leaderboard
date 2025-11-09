@@ -1,9 +1,9 @@
 @import './common.css';
 
-.reload {
+ .reload {
   --team-stats-label-color: #ffffff;
   --team-stats-value-color: #ffffff;
-  --team-stats-header-color: #ff7100;
+  --team-stats-header-color: #ff7100;;
 }
 
 .reload .leaderboard_table {
@@ -20,16 +20,17 @@
 
 .reload .leaderboard_container {
   width: 1920px;
-  height: 1080px;
+  height: 100vh;
+  overflow-y: auto;
   background: linear-gradient(135deg, #2e2c5c, #464381, #6a60d1, #8d84f3); /*Couleur de fond */
-  /* background-image: url("");  Image de fond */
+
 }
 
 .reload .row_container {
   display: flex;
   gap: 15px;
-  color: #ffffff; 
-  box-shadow: inset 0 0 0 5px #ff7100; 
+  color: #ffffff;; 
+  box-shadow: inset 0 0 0 5px #ff7100;
   opacity: 1; 
   position: relative; 
   transform: translateY(0); 
@@ -47,6 +48,16 @@
   align-items: center;
   font-size: 26px;
   font-family: "Eurostile";
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+  position: relative;
+}
+
+.reload .position_change {
+  position: absolute;
+  right: 0px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .reload .row_container .name_container {
@@ -55,11 +66,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 30px;
+  gap: 6px;
   background-color: transparent;
   font-family: "Eurostile";
   font-size: 26px;
-  color: #ffffff; /* init blanc */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .reload .row_container .info_box {
@@ -71,14 +82,16 @@
   background-color: transparent;
   font-family: "Eurostile";
   font-size: 26px;
-  color: #ffffff; /* init blanc */
+  color: #ffffff;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .reload .header_container {
   display: flex;
   gap: 15px;
-  box-shadow: inset 0 0 0 5px #ff7100; /* init blanc */
-  background-color: #ff7100; /* init blanc */
+  box-shadow: inset 0 0 0 5px #ff7100;
+  background-color: #ff7100;
 }
 
 .reload .header_container .rank_header {
@@ -89,8 +102,10 @@
   justify-content: center;
   align-items: center;
   gap: 36px;
-  color: #ffffff; /* init noir */
+  color: #e8f6fe;
   font-family: "Eurostile";
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .reload .header_container .name_header {
@@ -100,8 +115,9 @@
   justify-content: center;
   align-items: center;
   gap: 36px;
-  color: #ffffff; /* init noir */
+  color: #e8f6fe;
   font-family: "Eurostile";
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .reload .header_container .info_header {
@@ -110,8 +126,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #ffffff;
+  color: #e8f6fe;
   font-family: "Eurostile";
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .reload .search_container {
@@ -126,7 +144,7 @@
 
 .reload .search_input {
   background-color: var(--team-stats-value-color);
-  border: 2px solid #ff7100;
+  border: 2px solid #000000;
   border-radius: 10px;
   padding: 10px 15px;
   font-family: "Eurostile";
@@ -151,8 +169,8 @@
 }
 
 .reload .control_button {
-  background-color: #ff7100;
-  color: white;
+  background-color: #fedb3d;
+  color: #e8f6fe;
   border: none;
   padding: 10px 20px;
   border-radius: 5px;
@@ -163,11 +181,11 @@
 }
 
 .reload .control_button:hover {
-  background-color: #b8323c;
+  background-color: #fedb3d;
 }
 
 .reload .control_button.active {
-  background-color: #a02d36;
+  background-color: #fedb3d;
 }
 
 .reload .pagination_container {
@@ -181,8 +199,8 @@
 }
 
 .reload .pagination_button {
-  background-color: #ff7100;
-  color: white;
+  background-color: #fedb3d;
+  color: #e8f6fe;
   border: none;
   padding: 8px 16px;
   border-radius: 5px;
@@ -193,7 +211,7 @@
 }
 
 .reload .pagination_button:hover {
-  background-color: #ff7100;
+  background-color: #fedb3d;
 }
 
 .reload .pagination_button:disabled {
@@ -250,7 +268,7 @@
 }
 
 .reload .modal_content::-webkit-scrollbar-thumb:hover {
-  background: #ff7100;
+  background: #fedb3d;
 }
 
 .reload .modal_header {
@@ -264,13 +282,13 @@
 
 .reload .modal_header h2 {
   margin: 0;
-  color: #fff;
+  color: #e8f6fe;
 }
 
 .reload .close_button {
   background: none;
   border: none;
-  color: #fff;
+  color: #e8f6fe;
   font-size: 24px;
   cursor: pointer;
   padding: 0;
@@ -464,3 +482,6 @@
     transform: translateY(0);
   }
 }
+
+.alive-dot { width: 15px; height: 15px; margin: 0 4px 0 0; box-shadow: 0 0 14px red; border-radius: 50%; background-color: red; display: inline-block; vertical-align: middle; flex-shrink: 0; animation: pulse-6b28ff87 10s ease-in-out infinite; }
+@keyframes pulse-6b28ff87 { 0% { opacity: 0.67; box-shadow: rgb(255,0,0) 0px 0px 6.70362px 0px; } 50% { opacity: 1; box-shadow: rgb(255,0,0) 0px 0px 14px 0px; } 100% { opacity: 0.67; box-shadow: rgb(255,0,0) 0px 0px 6.70362px 0px; } }

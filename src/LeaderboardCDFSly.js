@@ -41,7 +41,7 @@ const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, w
                 display: 'inline-block',
                 marginLeft: '0px',
                 position: 'absolute',
-                right: '-18px',
+                right: '-28px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 pointerEvents: 'none'
