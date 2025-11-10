@@ -83,6 +83,9 @@ function PopUpLeaderboard() {
     const [allEntries, setAllEntries] = useState([])
     const [page, setPage] = useState(0)
     const [transition, setTransition] = useState('fade')
+    const [isHidden, setIsHidden] = useState(false)
+    const hideTimerRef = useRef(null)
+    const prevAliveCountRef = useRef(0)
 
     useEffect(() => {
 
@@ -147,6 +150,26 @@ function PopUpLeaderboard() {
     const showAliveOnly = onlyAlive
         ? true
         : (aliveCount === 0 ? !restoreFullOnEnd : aliveCount <= 10);
+    useEffect(() => {
+        const prev = prevAliveCountRef.current;
+        if (prev > 0 && aliveCount === 0) {
+            setIsHidden(true);
+            if (hideTimerRef.current) {
+                clearTimeout(hideTimerRef.current);
+            }
+            hideTimerRef.current = setTimeout(() => {
+                setIsHidden(false);
+                hideTimerRef.current = null;
+            }, 120000);
+        }
+        prevAliveCountRef.current = aliveCount;
+        return () => {
+            if (hideTimerRef.current) {
+                clearTimeout(hideTimerRef.current);
+                hideTimerRef.current = null;
+            }
+        };
+    }, [aliveCount]);
 
     useEffect(() => {
         const baseListLength = showAliveOnly
@@ -160,7 +183,7 @@ function PopUpLeaderboard() {
     }, [allEntries, showAliveOnly]);
 
     useEffect(() => {
-        if (!showAliveOnly) {
+        if (!showAliveOnly && !isHidden) {
             const timer = setInterval(() => {
                 setTransition('next');
                 setPage(prev => {
@@ -170,7 +193,7 @@ function PopUpLeaderboard() {
             }, 30000);
             return () => clearInterval(timer);
         }
-    }, [showAliveOnly, allEntries.length]);
+    }, [showAliveOnly, allEntries.length, isHidden]);
 
     function nextPage() {
         setTransition('next');
@@ -188,6 +211,10 @@ function PopUpLeaderboard() {
 
     const baseList = showAliveOnly ? allEntries.filter(item => item.alive) : allEntries.slice(0, Math.min(50, allEntries.length));
     const displayed = baseList.slice(page * 10, page * 10 + 10);
+
+    if (isHidden) {
+        return null;
+    }
 
     return (
         <div className='overlay_joueurs_'>
