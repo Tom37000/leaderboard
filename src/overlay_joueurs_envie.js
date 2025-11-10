@@ -162,6 +162,13 @@ function PopUpLeaderboard() {
                 hideTimerRef.current = null;
             }, 120000);
         }
+        if (aliveCount > 0 && isHidden) {
+            setIsHidden(false);
+            if (hideTimerRef.current) {
+                clearTimeout(hideTimerRef.current);
+                hideTimerRef.current = null;
+            }
+        }
         prevAliveCountRef.current = aliveCount;
         return () => {
             if (hideTimerRef.current) {
@@ -169,7 +176,7 @@ function PopUpLeaderboard() {
                 hideTimerRef.current = null;
             }
         };
-    }, [aliveCount]);
+    }, [aliveCount, isHidden]);
 
     useEffect(() => {
         const baseListLength = showAliveOnly
