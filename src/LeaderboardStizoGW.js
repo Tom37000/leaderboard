@@ -2,6 +2,13 @@ import './LeaderboardStizoGW.css';
 import React, {useState, useEffect} from "react"
 import { useLocation } from 'react-router-dom';
 
+function capitalizeFirst(str) {
+    if (typeof str !== 'string') return str;
+    const trimmed = str.trim();
+    if (!trimmed) return str;
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
 const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive}) {
     const renderPositionChange = () => {
 
@@ -105,6 +112,9 @@ const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, w
         };
     };
 
+    // Version affichée du nom d'équipe avec majuscule sur chaque pseudo
+    const displayTeamname = teamname.split(' - ').map(capitalizeFirst).join(' - ');
+
     return (
         <div className='row_container' style={{ 
             '--animation-order': order,
@@ -132,7 +142,7 @@ const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, w
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.7)'
             }} onClick={onClick}>
                 {alive && <span className='alive-dot' />}
-                {teamname}
+                {displayTeamname}
             </div>
             <div className='info_box'>{avg_place.toFixed(2)}</div>  
             <div className='info_box'>{elims}</div>  
@@ -173,7 +183,7 @@ function LeaderboardStizoGW() {
     const [localPage, setLocalPage] = useState(0); 
     const [totalApiPages, setTotalApiPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState(""); 
-    const [showSearch, setShowSearch] = useState(true); 
+    const [showSearch, setShowSearch] = useState(false); 
 
 
     const [showGamesColumn, setShowGamesColumn] = useState(false);
@@ -539,16 +549,6 @@ function LeaderboardStizoGW() {
                     </div>
                 )}
 
-                <div className='leaderboard_title' style={{
-                    fontFamily: 'Eurostile',
-                    fontSize: '32px',
-                    color: '#ffffffff',
-                    textAlign: 'center',
-                    paddingTop: '50px',
-                    marginBottom: '20px',
-                    fontWeight: 'bold'
-                }}>Classement | Finale Reload Duos #3</div>
-
                 <div className='leaderboard_table'>
                     <div className='header_container'>
                         <div className='rank_header' onClick={previousPage}>PLACE</div>
@@ -663,8 +663,8 @@ function LeaderboardStizoGW() {
                                         <div className='members_list'>
                                             {teamDetails[selectedTeam].members.map((member, index) => (
                                                 <div key={index} className='member_item'>
-                                                    <span className='member_name'>{member.name}</span>
-                                                    {member.ingame && <span className='member_ingame'>{member.ingame}</span>}
+                                                    <span className='member_name'>{capitalizeFirst(member.name)}</span>
+                                                    {member.ingame && <span className='member_ingame'>{capitalizeFirst(member.ingame)}</span>}
                                                 </div>
                                             ))}
                                         </div>
