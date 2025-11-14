@@ -12,6 +12,7 @@ import Leaderboard2R from './Leaderboard2R';
 import LeaderboardSolary from './LeaderboardSolary';
 import LeaderboardLyost from './LeaderboardLyost';
 import LeaderboardReload from './LeaderboardReload';
+import LeaderboardStizoGW from './LeaderboardStizoGW';
 import LeaderboardErazer from './LeaderboardErazer';
 import LeaderboardErazerV2 from './LeaderboardErazerV2';
 import LeaderboardErazerCumulative from './LeaderboardErazerCumulative';
@@ -37,6 +38,7 @@ function App() {
           <Route path="/ctn_leaderboard" element={<LeaderboardCtn />} />
           <Route path="/sly_hvk_leaderboard" element={<LeaderboardSlyHvK />} />
           <Route path="/reload_leaderboard" element={<LeaderboardReload />} />
+          <Route path="/stizogw_leaderboard" element={<LeaderboardStizoGW />} />
           <Route path="/2r_leaderboard" element={<Leaderboard2R />} />
           <Route path="/solary_leaderboard" element={<LeaderboardSolary />} />
           <Route path="/lyost_leaderboard" element={<LeaderboardLyost />} />
