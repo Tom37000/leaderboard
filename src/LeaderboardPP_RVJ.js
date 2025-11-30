@@ -538,7 +538,7 @@ function LeaderboardPP_RVJ() {
                     paddingTop: '50px',
                     marginBottom: '20px',
                     fontWeight: 'bold'
-                }}>Classement | Finale PP Solo</div>
+                }}>Classement | Revenja Victory Duos</div>
 
                 <div className='leaderboard_table'>
                     <div className='header_container'>
