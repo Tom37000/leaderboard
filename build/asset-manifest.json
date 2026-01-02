@@ -1,13 +1,14 @@
 {
   "files": {
-    "main.css": "/leaderboard/build/static/css/main.a370a1bf.css",
-    "main.js": "/leaderboard/build/static/js/main.fa70693a.js",
+    "main.css": "/leaderboard/build/static/css/main.e9434bff.css",
+    "main.js": "/leaderboard/build/static/js/main.5d598a07.js",
     "static/js/453.98276a77.chunk.js": "/leaderboard/build/static/js/453.98276a77.chunk.js",
     "static/media/stizogw_background.png": "/leaderboard/build/static/media/stizogw_background.dab4d340def933776031.png",
     "static/media/stizo_cup_honda_background.png": "/leaderboard/build/static/media/stizo_cup_honda_background.f9604cfe7796019e0866.png",
     "static/media/lyost_leaderboard.png": "/leaderboard/build/static/media/lyost_leaderboard.e240f2e8ac69cfcb0ffa.png",
     "static/media/background_cdf.png": "/leaderboard/build/static/media/background_cdf.d874744d1750a4598e24.png",
     "static/media/reddysh_royale_background.png": "/leaderboard/build/static/media/reddysh_royale_background.84434ba45ecdd7c68360.png",
+    "static/media/fond.png": "/leaderboard/build/static/media/fond.70fb45c8fdd5aa3bd68e.png",
     "static/media/erazer_leaderboard.png": "/leaderboard/build/static/media/erazer_leaderboard.bcf70871455dab0fa419.png",
     "static/media/Affiche2r_classement.png": "/leaderboard/build/static/media/Affiche2r_classement.ce94076cb17e88296ffa.png",
     "static/media/erazer_leaderboard_background.png": "/leaderboard/build/static/media/erazer_leaderboard_background.15259f16e5f09fd9a2be.png",
@@ -23,12 +24,12 @@
     "static/media/Eurostile.otf": "/leaderboard/build/static/media/Eurostile.5af602eec7a5fddc3fd4.otf",
     "static/media/good_times.OTF": "/leaderboard/build/static/media/good_times.a86d4f7f5cdb8cf2e409.OTF",
     "index.html": "/leaderboard/build/index.html",
-    "main.a370a1bf.css.map": "/leaderboard/build/static/css/main.a370a1bf.css.map",
-    "main.fa70693a.js.map": "/leaderboard/build/static/js/main.fa70693a.js.map",
+    "main.e9434bff.css.map": "/leaderboard/build/static/css/main.e9434bff.css.map",
+    "main.5d598a07.js.map": "/leaderboard/build/static/js/main.5d598a07.js.map",
     "453.98276a77.chunk.js.map": "/leaderboard/build/static/js/453.98276a77.chunk.js.map"
   },
   "entrypoints": [
-    "/leaderboard/static/css/main.a370a1bf.css",
-    "/leaderboard/static/js/main.fa70693a.js"
+    "/leaderboard/css/main.e9434bff.css",
+    "/leaderboard/js/main.5d598a07.js"
   ]
 }

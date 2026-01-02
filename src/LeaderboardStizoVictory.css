@@ -1,0 +1,527 @@
+@import './common.css';
+
+.stizo_victory {
+    --team-stats-label-color: #ffffff;
+    --team-stats-value-color: #ffffff;
+    --team-stats-header-color: #4676e5;
+}
+
+.stizo_victory .leaderboard_table {
+    position: absolute;
+    width: 100%;
+    height: fit-content;
+    top: 166px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stizo_victory .leaderboard_container {
+    width: 1920px;
+    height: 100vh;
+    overflow-y: auto;
+    /* background: #4676e5; */
+    background-image: url("fond.png");
+}
+
+.stizo_victory .row_container {
+    display: flex;
+    gap: 15px;
+    color: #ffffff;
+    ;
+    box-shadow: inset 0 0 0 5px #000000;
+    background-color: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    opacity: 1;
+    position: relative;
+    transform: translateY(0);
+    transition: opacity 0.3s ease;
+    will-change: transform, opacity;
+}
+
+.stizo_victory .row_container .rank_container {
+    height: 62px;
+    width: 90px;
+    margin-left: 5px;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 26px;
+    font-family: "Eurostile";
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    position: relative;
+}
+
+.stizo_victory .row_container .name_container {
+    height: 58px;
+    width: 579px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background-color: transparent;
+    font-family: "Eurostile";
+    font-size: 26px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.stizo_victory .row_container .info_box {
+    height: 58px;
+    width: 118.99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    font-family: "Eurostile";
+    font-size: 26px;
+    color: #ffffff;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.stizo_victory .header_container {
+    display: flex;
+    gap: 15px;
+    box-shadow: inset 0 0 0 5px #000000;
+    background-color: #000000;
+}
+
+.stizo_victory .header_container .rank_header {
+    width: 90px;
+    height: 62px;
+    margin-left: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 36px;
+    color: #ffffff;
+    font-family: "Eurostile";
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.stizo_victory .header_container .name_header {
+    width: 579px;
+    height: 62px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 36px;
+    color: #ffffff;
+    font-family: "Eurostile";
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.stizo_victory .header_container .info_header {
+    width: 118.99px;
+    height: 62px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ffffff;
+    font-family: "Eurostile";
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.stizo_victory .search_container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    position: absolute;
+    top: 105px;
+    width: 100%;
+    z-index: 10;
+}
+
+.stizo_victory .search_input {
+    background-color: var(--team-stats-value-color);
+    border: 2px solid #000000;
+    border-radius: 10px;
+    padding: 10px 15px;
+    font-family: "Eurostile";
+    font-size: 18px;
+    color: #000000;
+    width: 300px;
+    outline: none;
+}
+
+.stizo_victory .search_input::placeholder {
+    color: #000000;
+    opacity: 0.7;
+}
+
+.stizo_victory .button_container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+}
+
+.stizo_victory .control_button {
+    background-color: #d5393d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-family: "Eurostile";
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.stizo_victory .control_button:hover {
+    background-color: #b8323c;
+}
+
+.stizo_victory .control_button.active {
+    background-color: #a02d36;
+}
+
+.stizo_victory .pagination_container {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+}
+
+.stizo_victory .pagination_button {
+    background-color: #000000;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-family: "Eurostile";
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.stizo_victory .pagination_button:hover {
+    background-color: #b8323c;
+}
+
+.stizo_victory .pagination_button:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}
+
+.stizo_victory .page_info {
+    color: white;
+    font-family: "Eurostile";
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+}
+
+.stizo_victory .modal_overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.stizo_victory .modal_content {
+    background-color: #1a1a1a;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    color: white;
+    font-family: "Eurostile";
+    border: 2px solid #333;
+}
+
+.stizo_victory .modal_content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.stizo_victory .modal_content::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 4px;
+}
+
+.stizo_victory .modal_content::-webkit-scrollbar-thumb {
+    background: var(--team-stats-header-color);
+    border-radius: 4px;
+}
+
+.stizo_victory .modal_content::-webkit-scrollbar-thumb:hover {
+    background: #000000;
+}
+
+.stizo_victory .modal_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+}
+
+.stizo_victory .modal_header h2 {
+    margin: 0;
+    color: #fff;
+}
+
+.stizo_victory .close_button {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stizo_victory .close_button:hover {
+    color: var(--team-stats-header-color);
+}
+
+.stizo_victory .modal_body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.stizo_victory .team_summary,
+.stizo_victory .members_section,
+.stizo_victory .sessions_section {
+    background-color: #2a2a2a;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.stizo_victory .team_summary h3,
+.stizo_victory .members_section h3,
+.stizo_victory .sessions_section h3 {
+    margin: 0 0 10px 0;
+    color: var(--team-stats-header-color);
+}
+
+.stizo_victory .team_stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.stizo_victory .stat_item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #444;
+}
+
+.stizo_victory .stat_label {
+    color: var(--team-stats-label-color);
+    font-weight: bold;
+}
+
+.stizo_victory .stat_value {
+    color: var(--team-stats-value-color);
+}
+
+.stizo_victory .members_list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stizo_victory .member_item {
+    background-color: #333;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stizo_victory .member_name {
+    font-weight: bold;
+    color: #fff;
+}
+
+.stizo_victory .member_ingame {
+    color: #ccc;
+    font-style: italic;
+}
+
+.stizo_victory .sessions_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stizo_victory .session_item {
+    background-color: #333;
+    padding: 8px 12px;
+    border-radius: 5px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 10px;
+    font-size: 14px;
+}
+
+.stizo_victory .session_stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stizo_victory .session_stat_label {
+    color: #ccc;
+    font-size: 12px;
+}
+
+.stizo_victory .session_stat_value {
+    color: #fff;
+    font-weight: bold;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes smoothPositionChange {
+    0% {
+        transform: translateY(var(--slide-from));
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes smoothAppear {
+    0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes positionChange {
+    0% {
+        transform: translateY(0);
+    }
+
+    30% {
+        transform: translateY(var(--move-distance));
+    }
+
+    60% {
+        transform: translateY(calc(var(--move-distance) * 0.3));
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideFromTo {
+    0% {
+        transform: translateY(var(--slide-from));
+        opacity: 0.8;
+    }
+
+    50% {
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: translateY(var(--slide-to));
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    0% {
+        transform: translateY(var(--slide-distance));
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDown {
+    0% {
+        transform: translateY(calc(var(--slide-distance) * -1));
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+.stizo_victory .position_change {
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.alive-dot {
+    width: 15px;
+    height: 15px;
+    margin: 0 4px 0 0;
+    box-shadow: 0 0 14px red;
+    border-radius: 50%;
+    background-color: red;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+    animation: pulse-6b28ff87 10s ease-in-out infinite;
+}
+
+@keyframes pulse-6b28ff87 {
+    0% {
+        opacity: 0.67;
+        box-shadow: rgb(255, 0, 0) 0px 0px 6.70362px 0px;
+    }
+
+    50% {
+        opacity: 1;
+        box-shadow: rgb(255, 0, 0) 0px 0px 14px 0px;
+    }
+
+    100% {
+        opacity: 0.67;
+        box-shadow: rgb(255, 0, 0) 0px 0px 6.70362px 0px;
+    }
+}
