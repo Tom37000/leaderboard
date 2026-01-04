@@ -1,9 +1,10 @@
 @import './common.css';
 
- .reload {
+.reload {
   --team-stats-label-color: #ffffff;
   --team-stats-value-color: #ffffff;
-  --team-stats-header-color: #ff7100;;
+  --team-stats-header-color: #ff7100;
+  ;
 }
 
 .reload .leaderboard_table {
@@ -22,20 +23,22 @@
   width: 1920px;
   height: 100vh;
   overflow-y: auto;
-  background: linear-gradient(135deg, #2e2c5c, #464381, #6a60d1, #8d84f3); /*Couleur de fond */
+  background: linear-gradient(135deg, #2e2c5c, #464381, #6a60d1, #8d84f3);
+  /*Couleur de fond */
 
 }
 
 .reload .row_container {
   display: flex;
   gap: 15px;
-  color: #ffffff;; 
+  color: #ffffff;
+  ;
   box-shadow: inset 0 0 0 5px #ff7100;
-  opacity: 1; 
-  position: relative; 
-  transform: translateY(0); 
-  transition: opacity 0.3s ease; 
-  will-change: transform, opacity; 
+  opacity: 1;
+  position: relative;
+  transform: translateY(0);
+  transition: opacity 0.3s ease;
+  will-change: transform, opacity;
 }
 
 .reload .row_container .rank_container {
@@ -55,7 +58,7 @@
 
 .reload .position_change {
   position: absolute;
-  right: 0px;
+  right: -8px;
   top: 50%;
   transform: translateY(-50%);
 }
@@ -408,6 +411,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -419,6 +423,7 @@
     transform: translateY(var(--slide-from));
     opacity: 0.9;
   }
+
   100% {
     transform: translateY(0);
     opacity: 1;
@@ -430,6 +435,7 @@
     opacity: 0;
     transform: translateY(10px) scale(0.98);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -440,12 +446,15 @@
   0% {
     transform: translateY(0);
   }
+
   30% {
     transform: translateY(var(--move-distance));
   }
+
   60% {
     transform: translateY(calc(var(--move-distance) * 0.3));
   }
+
   100% {
     transform: translateY(0);
   }
@@ -456,9 +465,11 @@
     transform: translateY(var(--slide-from));
     opacity: 0.8;
   }
+
   50% {
     opacity: 0.9;
   }
+
   100% {
     transform: translateY(var(--slide-to));
     opacity: 1;
@@ -469,6 +480,7 @@
   0% {
     transform: translateY(var(--slide-distance));
   }
+
   100% {
     transform: translateY(0);
   }
@@ -478,10 +490,38 @@
   0% {
     transform: translateY(calc(var(--slide-distance) * -1));
   }
+
   100% {
     transform: translateY(0);
   }
 }
 
-.alive-dot { width: 15px; height: 15px; margin: 0 4px 0 0; box-shadow: 0 0 14px red; border-radius: 50%; background-color: red; display: inline-block; vertical-align: middle; flex-shrink: 0; animation: pulse-6b28ff87 10s ease-in-out infinite; }
-@keyframes pulse-6b28ff87 { 0% { opacity: 0.67; box-shadow: rgb(255,0,0) 0px 0px 6.70362px 0px; } 50% { opacity: 1; box-shadow: rgb(255,0,0) 0px 0px 14px 0px; } 100% { opacity: 0.67; box-shadow: rgb(255,0,0) 0px 0px 6.70362px 0px; } }
+.alive-dot {
+  width: 15px;
+  height: 15px;
+  margin: 0 4px 0 0;
+  box-shadow: 0 0 14px red;
+  border-radius: 50%;
+  background-color: red;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  animation: pulse-6b28ff87 10s ease-in-out infinite;
+}
+
+@keyframes pulse-6b28ff87 {
+  0% {
+    opacity: 0.67;
+    box-shadow: rgb(255, 0, 0) 0px 0px 6.70362px 0px;
+  }
+
+  50% {
+    opacity: 1;
+    box-shadow: rgb(255, 0, 0) 0px 0px 14px 0px;
+  }
+
+  100% {
+    opacity: 0.67;
+    box-shadow: rgb(255, 0, 0) 0px 0px 6.70362px 0px;
+  }
+}

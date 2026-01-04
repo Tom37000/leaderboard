@@ -272,97 +272,99 @@ function LeaderboardPP_RVJ() {
                 return b.points - a.points;
             });
 
-            const lastFinishedKey = `cdf_sly_last_finished_${leaderboard_id}`;
-            const lastFinished = JSON.parse(localStorage.getItem(lastFinishedKey) || '{}');
-            const indicatorsStorageKey = `position_indicators_${leaderboard_id}`;
-            const storedIndicators = JSON.parse(localStorage.getItem(indicatorsStorageKey) || '{}');
-            let hasChanges = false;
+            const snapshotsKey = `pp_rvj_ranks_snapshots_${leaderboard_id}`;
+            const rankSnapshots = JSON.parse(localStorage.getItem(snapshotsKey) || '{}');
             const newIndicators = {};
+            let hasNewChanges = false;
             const changedTeams = new Set();
+            const prevRunIndicatorsKey = `pp_rvj_prev_run_indicators_${leaderboard_id}`;
+            const prevRunIndicators = JSON.parse(localStorage.getItem(prevRunIndicatorsKey) || '{}');
 
             allLeaderboardData.forEach(team => {
-                const prev = lastFinished[team.teamname];
-                if (!team.alive) {
-                    if (prev && team.games === (prev.games || 0) + 1) {
-                        const change = (prev.place || team.place) - team.place;
-                        newIndicators[team.teamname] = change === 0 ? 0 : change;
-                        if (change !== 0) {
+                const gameCount = team.games;
+                if (!rankSnapshots[gameCount]) {
+                    rankSnapshots[gameCount] = {};
+                }
+                rankSnapshots[gameCount][team.teamname] = team.place;
+                if (gameCount > 1) {
+                    const prevGameCount = gameCount - 1;
+                    if (rankSnapshots[prevGameCount] && rankSnapshots[prevGameCount][team.teamname]) {
+                        const prevRank = rankSnapshots[prevGameCount][team.teamname];
+                        const change = prevRank - team.place;
+
+                        newIndicators[team.teamname] = change;
+                        if (newIndicators[team.teamname] !== (prevRunIndicators[team.teamname] || 0)) {
                             changedTeams.add(team.teamname);
-                            hasChanges = true;
+                            hasNewChanges = true;
                         }
-                    }
-                    if (!prev || prev.games !== team.games) {
-                        lastFinished[team.teamname] = {
-                            games: team.games,
-                            place: team.place,
-                            points: (v7PointsByTeamname && typeof v7PointsByTeamname[team.teamname] !== 'undefined')
-                                ? v7PointsByTeamname[team.teamname]
-                                : team.points
-                        };
-                    } else if (storedIndicators[team.teamname] !== undefined) {
-                        newIndicators[team.teamname] = storedIndicators[team.teamname];
                     }
                 }
             });
 
-            localStorage.setItem(lastFinishedKey, JSON.stringify(lastFinished));
-
-            localStorage.setItem(indicatorsStorageKey, JSON.stringify(newIndicators));
+            localStorage.setItem(snapshotsKey, JSON.stringify(rankSnapshots));
+            localStorage.setItem(prevRunIndicatorsKey, JSON.stringify(newIndicators));
 
             let updatedLeaderboardData;
             if (previousLeaderboard) {
                 const previousTeamsMap = new Map(previousLeaderboard.map(team => [team.teamname, team]));
                 updatedLeaderboardData = allLeaderboardData.map(team => {
                     const existingTeam = previousTeamsMap.get(team.teamname);
+
+                    let dataChanged = false;
                     if (existingTeam) {
-                        const positionChanged = existingTeam.place !== team.place;
-                        const dataChanged = existingTeam.points !== team.points ||
+                        dataChanged = existingTeam.points !== team.points ||
                             existingTeam.elims !== team.elims ||
                             existingTeam.wins !== team.wins ||
                             existingTeam.games !== team.games ||
                             Math.abs(existingTeam.avg_place - team.avg_place) > 0.01;
-                        return {
-                            ...team,
-                            positionChange: newIndicators[team.teamname] || 0,
-                            hasPositionChanged: positionChanged || (newIndicators[team.teamname] !== undefined && newIndicators[team.teamname] !== 0),
-                            teamId: team.teamname,
-                            _isUpdated: positionChanged || dataChanged
-                        };
-                    } else {
-                        return {
-                            ...team,
-                            positionChange: newIndicators[team.teamname] || 0,
-                            hasPositionChanged: newIndicators[team.teamname] !== undefined && newIndicators[team.teamname] !== 0,
-                            teamId: team.teamname,
-                            _isUpdated: true
-                        };
                     }
+
+                    const indicatorVal = newIndicators[team.teamname] || 0;
+                    const prevIndicatorVal = prevRunIndicators[team.teamname] || 0;
+                    const positionChanged = indicatorVal !== prevIndicatorVal;
+
+                    return {
+                        ...team,
+                        positionChange: indicatorVal,
+                        hasPositionChanged: positionChanged,
+                        teamId: team.teamname,
+                        _isUpdated: dataChanged || positionChanged
+                    };
                 });
             } else {
                 updatedLeaderboardData = allLeaderboardData.map(team => {
                     return {
                         ...team,
                         positionChange: newIndicators[team.teamname] || 0,
-                        hasPositionChanged: newIndicators[team.teamname] !== undefined && newIndicators[team.teamname] !== 0,
+                        hasPositionChanged: (newIndicators[team.teamname] || 0) !== 0,
                         teamId: team.teamname,
                         _isUpdated: true
                     };
                 });
             }
 
-            const shouldShowIndicators = Object.keys(newIndicators).length > 0;
             const allDead = updatedLeaderboardData.length > 0 && updatedLeaderboardData.every(team => !team.alive);
+            const shouldShowIndicators = allDead;
 
-            setShowPositionIndicators(allDead);
+            if (!shouldShowIndicators) {
+                updatedLeaderboardData.forEach(team => {
+                    team.positionChange = 0;
+                    team.hasPositionChanged = false;
+                });
+            }
+
+            setShowPositionIndicators(shouldShowIndicators);
             setHasRefreshedOnce(true);
 
-            if (hasChanges && changedTeams.size > 0) {
+            if (changedTeams.size > 0) {
                 const now = Date.now();
                 setLastChangeTime(now);
-                const lastChangeTimeKey = `last_change_time_${leaderboard_id}`;
+                const lastChangeTimeKey = `pp_rvj_last_change_time_${leaderboard_id}`;
                 localStorage.setItem(lastChangeTimeKey, now.toString());
                 setAnimationEnabled(true);
                 setTimeout(() => { setAnimationEnabled(false); }, 2500);
+            } else {
+                setAnimationEnabled(false);
             }
 
             setShowGamesColumn(hasMultipleGames);
@@ -396,7 +398,7 @@ function LeaderboardPP_RVJ() {
     useEffect(() => {
         loadLeaderboard();
 
-        const interval = setInterval(loadLeaderboard, 10000);
+        const interval = setInterval(loadLeaderboard, 15000);
 
         return () => clearInterval(interval);
     }, [leaderboard_id]);
@@ -547,7 +549,7 @@ function LeaderboardPP_RVJ() {
                     paddingTop: '50px',
                     marginBottom: '20px',
                     fontWeight: 'bold'
-                }}>Classement | Revenja Victory Duos</div>
+                }}>Classement | Finale PP</div>
 
                 <div className='leaderboard_table'>
                     <div className='header_container'>
