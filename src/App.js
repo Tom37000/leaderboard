@@ -22,6 +22,7 @@ import OverlayJoueursEnvie from './overlay_joueurs_envie';
 import LeaderboardPP_RVJ from './LeaderboardPP_RVJ';
 import LeaderboardCoupeDeFrance from './LeaderboardCoupeDeFrance';
 import LeaderboardStizoVictory from './LeaderboardStizoVictory';
+import LeaderBoardXinouCup from './LeaderBoardXinouCup';
 
 import TwitchPolls from './TwitchPolls';
 
@@ -53,6 +54,7 @@ function App() {
         <Route path="/pp_revenja_leaderboard" element={<LeaderboardPP_RVJ />} />
         <Route path="/coupedefrance_leaderboard" element={<LeaderboardCoupeDeFrance />} />
         <Route path="/stizo_victory_leaderboard" element={<LeaderboardStizoVictory />} />
+        <Route path="/xinou_leaderboard" element={<LeaderBoardXinouCup />} />
 
       </Routes >
     </Router>
