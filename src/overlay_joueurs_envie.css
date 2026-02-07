@@ -12,12 +12,12 @@ body {
 :root {
   --overlay-bg-color: #000000;
   /* --header-bg-gradient: linear-gradient(180deg, #a6ddff 0%, #68c1f8 100%); */
-  --header-bg-gradient: #01b2f0;;
+  --header-bg-gradient: #ed0b06;;
   --header-text-color: #ffffff;
   /* --rank-bg-color: linear-gradient(180deg, #a6ddff 0%, #68c1f8 100%); */
-  --rank-bg-color: #01b2f0;
+  --rank-bg-color: #ed0b06;
   --rank-text-color: #ffffff;
-  --name-bg-color: rgba(0, 42, 181, 0.5);
+  --name-bg-color: rgba(0, 0, 0, 0.5);
   --name-text-color: #ffffff; 
   --points-text-color: #ffffff;
   --alive-dot-color: red;

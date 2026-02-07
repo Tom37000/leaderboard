@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom';
 const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive }) {
     const renderPositionChange = () => {
 
-        if (!showPositionIndicators || games < 2) {
+        if (!showPositionIndicators || games < 2 || positionChange === null) {
             return null;
         }
 
@@ -319,14 +319,14 @@ function LeaderboardCtn() {
                             Math.abs(existingTeam.avg_place - team.avg_place) > 0.01;
                     }
 
-                    const indicatorVal = newIndicators[team.teamname] || 0;
-                    const prevIndicatorVal = prevRunIndicators[team.teamname] || 0;
+                    const indicatorVal = team.teamname in newIndicators ? newIndicators[team.teamname] : null;
+                    const prevIndicatorVal = team.teamname in prevRunIndicators ? prevRunIndicators[team.teamname] : null;
                     const positionChanged = indicatorVal !== prevIndicatorVal;
 
                     return {
                         ...team,
                         positionChange: indicatorVal,
-                        hasPositionChanged: positionChanged,
+                        hasPositionChanged: indicatorVal !== null && indicatorVal !== 0,
                         teamId: team.teamname,
                         _isUpdated: dataChanged || positionChanged
                     };
@@ -335,8 +335,8 @@ function LeaderboardCtn() {
                 updatedLeaderboardData = allLeaderboardData.map(team => {
                     return {
                         ...team,
-                        positionChange: newIndicators[team.teamname] || 0,
-                        hasPositionChanged: (newIndicators[team.teamname] || 0) !== 0,
+                        positionChange: team.teamname in newIndicators ? newIndicators[team.teamname] : null,
+                        hasPositionChanged: team.teamname in newIndicators && newIndicators[team.teamname] !== 0,
                         teamId: team.teamname,
                         _isUpdated: true
                     };
@@ -348,7 +348,7 @@ function LeaderboardCtn() {
 
             if (!shouldShowIndicators) {
                 updatedLeaderboardData.forEach(team => {
-                    team.positionChange = 0;
+                    team.positionChange = null;
                     team.hasPositionChanged = false;
                 });
             }
@@ -593,7 +593,7 @@ function LeaderboardCtn() {
                                 order={animationOrder}
                                 showGamesColumn={showGamesColumn}
                                 onClick={() => handleTeamClick(data.teamname)}
-                                positionChange={data.positionChange || 0}
+                                positionChange={data.positionChange}
                                 showPositionIndicators={showPositionIndicators}
                                 animationEnabled={animationEnabled && data.hasPositionChanged}
                                 hasPositionChanged={data.hasPositionChanged || false}

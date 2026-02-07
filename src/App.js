@@ -23,6 +23,7 @@ import LeaderboardPP_RVJ from './LeaderboardPP_RVJ';
 import LeaderboardCoupeDeFrance from './LeaderboardCoupeDeFrance';
 import LeaderboardStizoVictory from './LeaderboardStizoVictory';
 import LeaderBoardXinouCup from './LeaderBoardXinouCup';
+import LeaderboardTest from './LeaderboardTest';
 
 import TwitchPolls from './TwitchPolls';
 
@@ -55,6 +56,7 @@ function App() {
         <Route path="/coupedefrance_leaderboard" element={<LeaderboardCoupeDeFrance />} />
         <Route path="/stizo_victory_leaderboard" element={<LeaderboardStizoVictory />} />
         <Route path="/xinou_leaderboard" element={<LeaderBoardXinouCup />} />
+        <Route path="/test_leaderboard" element={<LeaderboardTest />} />
 
       </Routes >
     </Router>

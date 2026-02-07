@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom';
 const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive }) {
     const renderPositionChange = () => {
 
-        if (!showPositionIndicators || alive || games < 2) {
+        if (!showPositionIndicators || alive || games < 2 || positionChange === null) {
             return null;
         }
 
@@ -323,16 +323,16 @@ function LeaderboardCoupeDeFrance() {
                             Math.abs(existingTeam.avg_place - team.avg_place) > 0.01;
                         return {
                             ...team,
-                            positionChange: newIndicators[team.teamname] || 0,
-                            hasPositionChanged: positionChanged || (newIndicators[team.teamname] !== undefined && newIndicators[team.teamname] !== 0),
+                            positionChange: team.teamname in newIndicators ? newIndicators[team.teamname] : null,
+                            hasPositionChanged: positionChanged || (team.teamname in newIndicators && newIndicators[team.teamname] !== 0),
                             teamId: team.teamname,
                             _isUpdated: positionChanged || dataChanged
                         };
                     } else {
                         return {
                             ...team,
-                            positionChange: newIndicators[team.teamname] || 0,
-                            hasPositionChanged: newIndicators[team.teamname] !== undefined && newIndicators[team.teamname] !== 0,
+                            positionChange: team.teamname in newIndicators ? newIndicators[team.teamname] : null,
+                            hasPositionChanged: team.teamname in newIndicators && newIndicators[team.teamname] !== 0,
                             teamId: team.teamname,
                             _isUpdated: true
                         };
@@ -342,8 +342,8 @@ function LeaderboardCoupeDeFrance() {
                 updatedLeaderboardData = allLeaderboardData.map(team => {
                     return {
                         ...team,
-                        positionChange: newIndicators[team.teamname] || 0,
-                        hasPositionChanged: newIndicators[team.teamname] !== undefined && newIndicators[team.teamname] !== 0,
+                        positionChange: team.teamname in newIndicators ? newIndicators[team.teamname] : null,
+                        hasPositionChanged: team.teamname in newIndicators && newIndicators[team.teamname] !== 0,
                         teamId: team.teamname,
                         _isUpdated: true
                     };
@@ -590,7 +590,7 @@ function LeaderboardCoupeDeFrance() {
                                 order={animationOrder}
                                 showGamesColumn={showGamesColumn}
                                 onClick={() => handleTeamClick(data.teamname)}
-                                positionChange={data.positionChange || 0}
+                                positionChange={data.positionChange}
                                 showPositionIndicators={showPositionIndicators}
                                 animationEnabled={animationEnabled && data.hasPositionChanged}
                                 hasPositionChanged={data.hasPositionChanged || false}

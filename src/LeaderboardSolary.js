@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 
 const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex }) {
     const renderPositionChange = () => {
-        if (!showPositionIndicators) {
+        if (!showPositionIndicators || positionChange === null) {
             return null;
         }
         
@@ -311,7 +311,7 @@ function LeaderboardSolary() {
                             if (!dataChanged) {
                                 return {
                                     ...existingTeam,
-                                    positionChange: newIndicators[team.teamname] || existingTeam.positionChange || 0,
+                                    positionChange: team.teamname in newIndicators ? newIndicators[team.teamname] : (existingTeam.positionChange ?? null),
                                     hasPositionChanged: changedTeams.has(team.teamname)
                                 };
                             } else {
@@ -322,14 +322,14 @@ function LeaderboardSolary() {
                                     wins: team.wins,
                                     games: team.games,
                                     avg_place: team.avg_place,
-                                    positionChange: newIndicators[team.teamname] || 0,
+                                    positionChange: team.teamname in newIndicators ? newIndicators[team.teamname] : null,
                                     hasPositionChanged: false
                                 };
                             }
                         } else {
                             return {
                                 ...team,
-                                positionChange: newIndicators[team.teamname] || 0,
+                                positionChange: team.teamname in newIndicators ? newIndicators[team.teamname] : null,
                                 hasPositionChanged: changedTeams.has(team.teamname),
                                 teamId: team.teamname
                             };
@@ -339,7 +339,7 @@ function LeaderboardSolary() {
                     updatedLeaderboardData = allLeaderboardData.map(team => {
                         return {
                             ...team,
-                            positionChange: newIndicators[team.teamname] || 0,
+                            positionChange: team.teamname in newIndicators ? newIndicators[team.teamname] : null,
                             hasPositionChanged: changedTeams.has(team.teamname),
                             teamId: team.teamname
                         };
@@ -559,7 +559,7 @@ function LeaderboardSolary() {
                                 order={animationOrder}
                                 showGamesColumn={showGamesColumn}
                                 onClick={() => handleTeamClick(data.teamname)}
-                                positionChange={data.positionChange || 0}
+                                positionChange={data.positionChange}
                                 showPositionIndicators={showPositionIndicators}
                                 animationEnabled={animationEnabled}
                                 hasPositionChanged={data.hasPositionChanged || false}
