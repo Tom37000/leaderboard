@@ -17,19 +17,8 @@
 }
 
 .choupixs_bsk .lb_bg_overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-        repeating-linear-gradient(0deg,
-            transparent,
-            transparent 3px,
-            rgba(0, 0, 0, 0.04) 3px,
-            rgba(0, 0, 0, 0.04) 6px);
-    pointer-events: none;
-    z-index: 0;
+    display: none;
+    /* Désactivé pour éviter l'effet pixelisé sur le fond */
 }
 
 .choupixs_bsk .leaderboard_title {
@@ -41,16 +30,15 @@
 }
 
 .choupixs_bsk .leaderboard_title .title_text {
-    font-family: 'GoodTimes', 'Eurostile', sans-serif;
+    font-family: 'Eurostile', sans-serif;
     font-size: 48px;
     color: var(--accent-gold);
     font-weight: bold;
     text-shadow:
-        0 0 40px rgba(255, 215, 0, 0.25),
         0 0 80px rgba(255, 215, 0, 0.08),
         3px 3px 6px rgba(0, 0, 0, 0.9);
     text-transform: uppercase;
-    letter-spacing: 6px;
+    letter-spacing: 2px;
     display: block;
 }
 
@@ -65,6 +53,23 @@
     padding-top: 80px;
     position: relative;
     z-index: 1;
+    transition: gap 0.4s ease;
+}
+
+.choupixs_bsk .dual_leaderboard.single-column {
+    gap: 0;
+}
+
+.choupixs_bsk .dual_leaderboard.single-column .leaderboard_column {
+    width: 900px;
+    transform: scale(1.15);
+    transition: width 0.4s ease, transform 0.4s ease;
+}
+
+.choupixs_bsk .dual_leaderboard.two-columns .leaderboard_column {
+    width: auto;
+    transform: scale(1);
+    transition: width 0.4s ease, transform 0.4s ease;
 }
 
 .choupixs_bsk .leaderboard_column {
@@ -78,6 +83,21 @@
     box-shadow:
         0 0 50px rgba(0, 0, 0, 0.6),
         inset 0 0 40px rgba(0, 0, 0, 0.2);
+}
+
+.choupixs_bsk .leaderboard_column.second-column {
+    animation: slideInFromRight 0.5s ease-out;
+}
+
+@keyframes slideInFromRight {
+    0% {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 .choupixs_bsk .header_container {
@@ -107,6 +127,11 @@
     text-transform: uppercase;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
     background: transparent !important;
+    transition: width 0.4s ease;
+}
+
+.choupixs_bsk .single-column .header_container .rank_header {
+    width: 92px;
 }
 
 .choupixs_bsk .header_container .name_header {
@@ -127,6 +152,11 @@
     background: transparent !important;
     border-radius: 0 !important;
     gap: 0 !important;
+    transition: width 0.4s ease;
+}
+
+.choupixs_bsk .single-column .header_container .name_header {
+    width: 598px !important;
 }
 
 .choupixs_bsk .header_container .name_header .vr_label {
@@ -151,6 +181,11 @@
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
     background: transparent !important;
     border-radius: 0 !important;
+    transition: width 0.4s ease;
+}
+
+.choupixs_bsk .single-column .header_container .info_header {
+    width: 98px !important;
 }
 
 .choupixs_bsk .row_container {
@@ -236,6 +271,11 @@
     border-radius: 0 !important;
     position: relative;
     z-index: 1;
+    transition: width 0.4s ease;
+}
+
+.choupixs_bsk .single-column .row_container .rank_container {
+    width: 92px;
 }
 
 .choupixs_bsk .row_container .rank_container.top1 {
@@ -277,6 +317,11 @@
     background: transparent !important;
     border-radius: 0 !important;
     gap: 0 !important;
+    transition: width 0.4s ease;
+}
+
+.choupixs_bsk .single-column .row_container .name_container {
+    width: 598px !important;
 }
 
 .choupixs_bsk .row_container .name_container .team_name {
@@ -289,7 +334,25 @@
     text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.9);
     color: var(--accent-gold) !important;
     font-family: "Eurostile", sans-serif !important;
-    font-size: 20px !important;
+    font-size: 24px !important;
+}
+
+.choupixs_bsk .flag_icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    margin-right: 6px;
+}
+
+.choupixs_bsk .member_with_flag {
+    display: inline-flex;
+    align-items: center;
+}
+
+.choupixs_bsk .separator {
+    margin: 0 4px;
 }
 
 .choupixs_bsk .row_container .name_container .wins_badge {
@@ -319,6 +382,11 @@
     background-color: transparent !important;
     background: transparent !important;
     border-radius: 0 !important;
+    transition: width 0.4s ease;
+}
+
+.choupixs_bsk .single-column .row_container .info_box {
+    width: 98px !important;
 }
 
 .choupixs_bsk .row_container .info_box.points {

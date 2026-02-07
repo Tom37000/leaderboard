@@ -58,6 +58,26 @@
   background-color: transparent;
   font-family: "Eurostile";
   font-size: 26px;
+  padding: 2px 4px;
+  overflow: visible;
+}
+
+.stizo_cup .flag_icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+.stizo_cup .member_with_flag {
+  display: inline-flex;
+  align-items: center;
+}
+
+.stizo_cup .separator {
+  margin: 0 4px;
 }
 
 .stizo_cup .row_container .info_box {

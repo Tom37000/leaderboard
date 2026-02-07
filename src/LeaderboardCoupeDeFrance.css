@@ -70,6 +70,26 @@
     font-family: "Eurostile";
     font-size: 26px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    padding: 2px 4px;
+    overflow: visible;
+}
+
+.coupe_de_france .flag_icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    margin-right: 6px;
+}
+
+.coupe_de_france .member_with_flag {
+    display: inline-flex;
+    align-items: center;
+}
+
+.coupe_de_france .separator {
+    margin: 0 4px;
 }
 
 .cdf .row_container .info_box {

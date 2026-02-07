@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react"
 import { useLocation } from 'react-router-dom';
 import fondImage from './fond2.png';
 
-function Row({ rank, teamname, points, elims, wins, index, alive, positionChange, showPositionIndicators, games }) {
+function Row({ rank, teamname, points, elims, wins, index, alive, positionChange, showPositionIndicators, games, showFlags, memberData }) {
     const getRankClass = () => {
         if (rank === 1) return 'rank_container top1';
         if (rank === 2) return 'rank_container top2';
@@ -40,7 +40,27 @@ function Row({ rank, teamname, points, elims, wins, index, alive, positionChange
             </div>
             <div className='name_container'>
                 {alive && <span className='alive-dot' />}
-                <span className='team_name'>{teamname}</span>
+                <span className='team_name'>
+                    {showFlags && memberData && memberData.length > 0 ? (
+                        memberData.map((member, idx) => (
+                            <span key={idx} className='member_with_flag'>
+                                <img
+                                    src={`${process.env.PUBLIC_URL}/drapeaux-pays/${member.flag}.png`}
+                                    alt="flag"
+                                    className='flag_icon'
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = `${process.env.PUBLIC_URL}/drapeaux-pays/GroupIdentity_GeoIdentity_global.png`;
+                                    }}
+                                />
+                                <span>{member.name}</span>
+                                {idx < memberData.length - 1 && <span className='separator'> - </span>}
+                            </span>
+                        ))
+                    ) : (
+                        teamname
+                    )}
+                </span>
                 <span className='wins_badge'>{wins === 0 ? '-' : wins}</span>
             </div>
             <div className='info_box'>{elims}</div>
@@ -52,10 +72,39 @@ function Row({ rank, teamname, points, elims, wins, index, alive, positionChange
 function LeaderboardTest() {
 
     const leaderboard_id = new URLSearchParams(useLocation().search).get('id');
+    const location = useLocation();
+    const urlParams = new URLSearchParams(location.search);
+    const flagsParam = urlParams.get('flags');
 
     const [leaderboard, setLeaderboard] = useState(null)
     const [page, setPage] = useState(0)
     const [showPositionIndicators, setShowPositionIndicators] = useState(false)
+    const [showFlags, setShowFlags] = useState(flagsParam === 'true')
+    const [epicIdToCountry, setEpicIdToCountry] = useState({})
+
+    useEffect(() => {
+        if (showFlags) {
+            fetch(`${process.env.PUBLIC_URL}/id-epic-pays-database.txt`)
+                .then(response => response.text())
+                .then(data => {
+                    const mapping = {};
+                    const lines = data.split(/\r?\n/);
+                    lines.forEach((line, index) => {
+                        line = line.trim();
+                        if (!line) return;
+
+                        const match = line.match(/^([a-f0-9]+):\s*(.+)$/);
+                        if (match) {
+                            const epicId = match[1].trim();
+                            const country = match[2].trim();
+                            mapping[epicId] = country;
+                        }
+                    });
+                    setEpicIdToCountry(mapping);
+                })
+                .catch(err => console.error('Error loading epic ID database:', err));
+        }
+    }, [showFlags]);
 
     useEffect(() => {
 
@@ -90,6 +139,16 @@ function LeaderboardTest() {
                     const teamname = members.map(member => member.name).join(' - ');
                     const sessions = Object.values(data.teams[team].sessions);
                     const gamesCount = sessions.length;
+
+                    const memberData = showFlags ? members.map(member => {
+                        const epicId = member.ingame_id || member.id;
+                        const countryFlag = epicIdToCountry[epicId] || 'GroupIdentity_GeoIdentity_global';
+                        return {
+                            name: member.name,
+                            flag: countryFlag
+                        };
+                    }) : [];
+
                     leaderboard_list.push({
                         teamname: teamname,
                         elims: sessions.map(session => session.kills).reduce((acc, curr) => acc + curr, 0),
@@ -98,7 +157,8 @@ function LeaderboardTest() {
                         place: data.teams[team].place,
                         points: data.teams[team].points,
                         alive: !!aliveByTeamname[teamname],
-                        games: gamesCount
+                        games: gamesCount,
+                        memberData: memberData
                     })
                 }
 
@@ -124,19 +184,13 @@ function LeaderboardTest() {
 
                 localStorage.setItem(snapshotsKey, JSON.stringify(rankSnapshots));
 
-                // SIMULATION TEMPORAIRE - À SUPPRIMER
-                const simulatedAliveIndexes = [0, 2, 5]; // Joueurs 1, 3, 6 seront "alive"
-                const simulatedPositionChanges = [null, 5, -3, 0, 2, null, -1, 4, 0, -2, 3, -5, 1, 0, -4, 2, null, -1, 3, 0];
+                const allDead = leaderboard_list.length > 0 && leaderboard_list.every(team => !team.alive);
+                setShowPositionIndicators(allDead);
 
-                const finalList = leaderboard_list.map((team, index) => ({
+                const finalList = leaderboard_list.map(team => ({
                     ...team,
-                    alive: simulatedAliveIndexes.includes(index),
-                    positionChange: simulatedPositionChanges[index] !== undefined ? simulatedPositionChanges[index] : null,
-                    games: 3 // Simule 3 games pour afficher les indicateurs
+                    positionChange: allDead && team.teamname in newIndicators ? newIndicators[team.teamname] : null
                 }));
-
-                setShowPositionIndicators(true); // Force l'affichage des indicateurs
-                // FIN SIMULATION TEMPORAIRE
 
                 setLeaderboard(finalList)
             } catch (error) {
@@ -150,7 +204,7 @@ function LeaderboardTest() {
         return () => clearInterval(interval)
 
 
-    }, [leaderboard_id])
+    }, [leaderboard_id, epicIdToCountry, showFlags])
 
     function nextPage() {
         if (page < 8) {
@@ -174,7 +228,7 @@ function LeaderboardTest() {
                     <div className='title_underline'></div>
                 </div>
 
-                <div className='dual_leaderboard'>
+                <div className={`dual_leaderboard ${page === 0 ? 'single-column' : 'two-columns'}`}>
                     <div className='leaderboard_column'>
                         <div className='header_container'>
                             <div className='rank_header' onClick={previousPage}>PLACE</div>
@@ -186,7 +240,7 @@ function LeaderboardTest() {
                             <div className='info_header' onClick={nextPage}>POINTS</div>
                         </div>
 
-                        {leaderboard && leaderboard.slice(page * 20, page * 20 + 10).map((data, index) => (
+                        {leaderboard && leaderboard.slice(page === 0 ? 0 : page * 20, page === 0 ? 10 : page * 20 + 10).map((data, index) => (
                             <Row
                                 key={data.place}
                                 index={index}
@@ -199,37 +253,43 @@ function LeaderboardTest() {
                                 positionChange={data.positionChange}
                                 showPositionIndicators={showPositionIndicators}
                                 games={data.games}
+                                showFlags={showFlags}
+                                memberData={data.memberData}
                             />
                         ))}
                     </div>
 
-                    <div className='leaderboard_column'>
-                        <div className='header_container'>
-                            <div className='rank_header' onClick={previousPage}>PLACE</div>
-                            <div className='name_header'>
-                                <span>JOUEURS</span>
-                                <span className='vr_label'>WINS</span>
+                    {page !== 0 && (
+                        <div className='leaderboard_column second-column'>
+                            <div className='header_container'>
+                                <div className='rank_header' onClick={previousPage}>PLACE</div>
+                                <div className='name_header'>
+                                    <span>JOUEURS</span>
+                                    <span className='vr_label'>WINS</span>
+                                </div>
+                                <div className='info_header'>ELIMS</div>
+                                <div className='info_header' onClick={nextPage}>POINTS</div>
                             </div>
-                            <div className='info_header'>ELIMS</div>
-                            <div className='info_header' onClick={nextPage}>POINTS</div>
-                        </div>
 
-                        {leaderboard && leaderboard.slice(page * 20 + 10, page * 20 + 20).map((data, index) => (
-                            <Row
-                                key={data.place}
-                                index={index}
-                                rank={data.place}
-                                teamname={data.teamname}
-                                points={data.points}
-                                elims={data.elims}
-                                wins={data.wins}
-                                alive={data.alive}
-                                positionChange={data.positionChange}
-                                showPositionIndicators={showPositionIndicators}
-                                games={data.games}
-                            />
-                        ))}
-                    </div>
+                            {leaderboard && leaderboard.slice(page * 20 + 10, page * 20 + 20).map((data, index) => (
+                                <Row
+                                    key={data.place}
+                                    index={index}
+                                    rank={data.place}
+                                    teamname={data.teamname}
+                                    points={data.points}
+                                    elims={data.elims}
+                                    wins={data.wins}
+                                    alive={data.alive}
+                                    positionChange={data.positionChange}
+                                    showPositionIndicators={showPositionIndicators}
+                                    games={data.games}
+                                    showFlags={showFlags}
+                                    memberData={data.memberData}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

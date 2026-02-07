@@ -9,7 +9,7 @@ function capitalizeFirst(str) {
     return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
-const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive }) {
+const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive, showFlags, memberData }) {
     const renderPositionChange = () => {
 
         if (!showPositionIndicators || alive || games < 2 || positionChange === null) {
@@ -135,14 +135,30 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
             </div>
             <div className='name_container' style={{
                 cursor: 'pointer',
-                fontSize: teamname.length > 25 ? '16px' : teamname.length > 20 ? '18px' : teamname.length > 15 ? '20px' : teamname.length > 10 ? '22px' : '24px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                fontSize: teamname.length > 70 ? '7px' : teamname.length > 65 ? '8px' : teamname.length > 60 ? '9px' : teamname.length > 55 ? '10px' : teamname.length > 50 ? '11px' : teamname.length > 45 ? '12px' : teamname.length > 40 ? '13px' : teamname.length > 35 ? '14px' : teamname.length > 30 ? '15px' : teamname.length > 25 ? '17px' : teamname.length > 20 ? '19px' : teamname.length > 15 ? '21px' : '24px',
                 whiteSpace: 'nowrap',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.7)'
             }} onClick={onClick}>
                 {alive && <span className='alive-dot' />}
-                {displayTeamname}
+                {showFlags && memberData && memberData.length > 0 ? (
+                    memberData.map((member, idx) => (
+                        <span key={idx} className='member_with_flag'>
+                            <img
+                                src={`${process.env.PUBLIC_URL}/drapeaux-pays/${member.flag}.png`}
+                                alt="flag"
+                                className='flag_icon'
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = `${process.env.PUBLIC_URL}/drapeaux-pays/GroupIdentity_GeoIdentity_global.png`;
+                                }}
+                            />
+                            <span>{member.name}</span>
+                            {idx < memberData.length - 1 && <span className='separator'> - </span>}
+                        </span>
+                    ))
+                ) : (
+                    displayTeamname
+                )}
             </div>
             <div className='info_box'>{avg_place.toFixed(2)}</div>
             <div className='info_box'>{elims}</div>
@@ -167,7 +183,9 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
         prevProps.animationEnabled === nextProps.animationEnabled &&
         prevProps.hasPositionChanged === nextProps.hasPositionChanged &&
         prevProps.cascadeFadeEnabled === nextProps.cascadeFadeEnabled &&
-        prevProps.alive === nextProps.alive
+        prevProps.alive === nextProps.alive &&
+        prevProps.showFlags === nextProps.showFlags &&
+        prevProps.memberData === nextProps.memberData
     );
 });
 
@@ -177,12 +195,15 @@ function LeaderboardStizoGW() {
     const urlParams = new URLSearchParams(location.search);
     const leaderboard_id = urlParams.get('id');
     const cascadeParam = urlParams.get('cascade');
+    const flagsParam = urlParams.get('flags');
 
     const [leaderboard, setLeaderboard] = useState([]);
     const [apiPage, setApiPage] = useState(0);
     const [localPage, setLocalPage] = useState(0);
     const [totalApiPages, setTotalApiPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
+    const [showFlags, setShowFlags] = useState(flagsParam === 'true');
+    const [epicIdToCountry, setEpicIdToCountry] = useState({});
     const [showSearch, setShowSearch] = useState(false);
 
 
@@ -197,6 +218,30 @@ function LeaderboardStizoGW() {
     const [cascadeFadeEnabled, setCascadeFadeEnabled] = useState(cascadeParam === 'true');
     const [previousLeaderboard, setPreviousLeaderboard] = useState(null);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+    useEffect(() => {
+        if (showFlags) {
+            fetch(`${process.env.PUBLIC_URL}/id-epic-pays-database.txt`)
+                .then(response => response.text())
+                .then(data => {
+                    const mapping = {};
+                    const lines = data.split(/\r?\n/);
+                    lines.forEach((line, index) => {
+                        line = line.trim();
+                        if (!line) return;
+
+                        const match = line.match(/^([a-f0-9]+):\s*(.+)$/);
+                        if (match) {
+                            const epicId = match[1].trim();
+                            const country = match[2].trim();
+                            mapping[epicId] = country;
+                        }
+                    });
+                    setEpicIdToCountry(mapping);
+                })
+                .catch(err => console.error('Error loading epic ID database:', err));
+        }
+    }, [showFlags]);
 
     const loadLeaderboard = async () => {
         try {
@@ -263,6 +308,15 @@ function LeaderboardStizoGW() {
                         teamData: data.teams[team]
                     };
 
+                    const memberData = showFlags ? members.map(member => {
+                        const epicId = member.ingame_id || member.id;
+                        const countryFlag = epicIdToCountry[epicId] || 'GroupIdentity_GeoIdentity_global';
+                        return {
+                            name: member.name,
+                            flag: countryFlag
+                        };
+                    }) : [];
+
                     allLeaderboardData.push({
                         teamname: teamname,
                         elims: sessions.map(session => session.kills).reduce((acc, curr) => acc + curr, 0),
@@ -271,7 +325,8 @@ function LeaderboardStizoGW() {
                         games: gamesCount,
                         place: data.teams[team].place,
                         points: data.teams[team].points,
-                        alive: !!aliveByTeamname[teamname]
+                        alive: !!aliveByTeamname[teamname],
+                        memberData: memberData
                     });
                 }
             });
@@ -409,7 +464,7 @@ function LeaderboardStizoGW() {
         const interval = setInterval(loadLeaderboard, 10000);
 
         return () => clearInterval(interval);
-    }, [leaderboard_id]);
+    }, [leaderboard_id, epicIdToCountry, showFlags]);
 
     useEffect(() => {
         function handleKeyDown(event) {
@@ -597,6 +652,8 @@ function LeaderboardStizoGW() {
                                 cascadeFadeEnabled={cascadeFadeEnabled}
                                 cascadeIndex={index}
                                 alive={data.alive}
+                                showFlags={showFlags}
+                                memberData={data.memberData}
                             />
                         );
                     })}

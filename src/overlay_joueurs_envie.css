@@ -12,10 +12,10 @@ body {
 :root {
   --overlay-bg-color: #000000;
   /* --header-bg-gradient: linear-gradient(180deg, #a6ddff 0%, #68c1f8 100%); */
-  --header-bg-gradient: #ed0b06;;
+  --header-bg-gradient: #e57070;;
   --header-text-color: #ffffff;
   /* --rank-bg-color: linear-gradient(180deg, #a6ddff 0%, #68c1f8 100%); */
-  --rank-bg-color: #ed0b06;
+  --rank-bg-color: #e57070;
   --rank-text-color: #ffffff;
   --name-bg-color: rgba(0, 0, 0, 0.5);
   --name-text-color: #ffffff; 
