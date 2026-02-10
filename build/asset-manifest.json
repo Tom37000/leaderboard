@@ -30,7 +30,7 @@
     "453.98276a77.chunk.js.map": "/leaderboard/build/static/js/453.98276a77.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.e0dec26e.css",
-    "static/js/main.971a24f4.js"
+    "/leaderboard/static/css/main.e0dec26e.css",
+    "/leaderboard/static/js/main.971a24f4.js"
   ]
 }
