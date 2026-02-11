@@ -109,8 +109,8 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
         <div className='row_container' style={{
             '--animation-order': order,
             opacity: cascadeFadeEnabled ? 0 : (animationEnabled && hasPositionChanged ? 0.9 : 1),
-            animation: cascadeFadeEnabled ? 'fadeIn 0.8s forwards' : 'none',
-            animationDelay: cascadeFadeEnabled ? `${cascadeIndex * 0.1}s` : '0s',
+            animation: cascadeFadeEnabled ? 'fadeIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards' : 'none',
+            animationDelay: cascadeFadeEnabled ? `${cascadeIndex * 0.07}s` : '0s',
             transition: animationEnabled && hasPositionChanged ? 'none' : 'opacity 0.3s ease',
             ...getAnimationStyle()
         }}>
@@ -194,7 +194,7 @@ function LeaderboardReload() {
     const [searchQuery, setSearchQuery] = useState("");
     const [showFlags, setShowFlags] = useState(flagsParam === 'true');
     const [epicIdToCountry, setEpicIdToCountry] = useState({});
-    const [showSearch, setShowSearch] = useState(true);
+    const [showSearch, setShowSearch] = useState(false);
 
 
     const [showGamesColumn, setShowGamesColumn] = useState(false);
@@ -488,57 +488,11 @@ function LeaderboardReload() {
 
 
 
-    function nextPageFromPoints() {
-        if (!showGamesColumn) {
-            const filteredLeaderboard = leaderboard.filter(team => {
-                if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
-                    return true;
-                }
-                if (!isNaN(searchQuery) && searchQuery.trim() !== '') {
-                    const searchPosition = parseInt(searchQuery.trim());
-                    if (team.place === searchPosition) {
-                        return true;
-                    }
-                }
-                if (teamDetails[team.teamname] && teamDetails[team.teamname].members) {
-                    return teamDetails[team.teamname].members.some(member =>
-                        member.ingame_name && member.ingame_name.toLowerCase().includes(searchQuery.toLowerCase())
-                    );
-                }
-                return false;
-            });
-            const maxPages = Math.ceil(filteredLeaderboard.length / 10) - 1;
-
-            if (localPage < maxPages) {
-                setLocalPage(localPage + 1);
-            }
-        }
-    }
-
-    function nextPageFromGames() {
-        if (showGamesColumn) {
-            const filteredLeaderboard = leaderboard.filter(team => {
-                if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
-                    return true;
-                }
-                if (!isNaN(searchQuery) && searchQuery.trim() !== '') {
-                    const searchPosition = parseInt(searchQuery.trim());
-                    if (team.place === searchPosition) {
-                        return true;
-                    }
-                }
-                if (teamDetails[team.teamname] && teamDetails[team.teamname].members) {
-                    return teamDetails[team.teamname].members.some(member =>
-                        member.ingame_name && member.ingame_name.toLowerCase().includes(searchQuery.toLowerCase())
-                    );
-                }
-                return false;
-            });
-            const maxPages = Math.ceil(filteredLeaderboard.length / 10) - 1;
-
-            if (localPage < maxPages) {
-                setLocalPage(localPage + 1);
-            }
+    function nextPage() {
+        const total = getFilteredLeaderboard().length;
+        const maxPages = Math.max(0, Math.ceil(total / 20) - 1);
+        if (localPage < maxPages) {
+            setLocalPage(localPage + 1);
         }
     }
 
@@ -574,11 +528,63 @@ function LeaderboardReload() {
         });
     };
 
-    const currentPage = Math.floor((apiPage) + localPage);
-    const pageSize = 10;
     const filteredLeaderboard = getFilteredLeaderboard();
+    const leftItems = filteredLeaderboard.slice(
+        localPage * 20,
+        localPage * 20 + 10
+    );
+    const rightItems = filteredLeaderboard.slice(
+        localPage * 20 + 10,
+        localPage * 20 + 20
+    );
 
-    const displayedLeaderboard = filteredLeaderboard.slice(currentPage * pageSize, (currentPage * pageSize) + pageSize);
+    const renderHeader = () => (
+        <div className='header_container'>
+            <div className='rank_header' onClick={previousPage}>PLACE</div>
+            <div className='name_header'>ÉQUIPES</div>
+            <div style={{ fontSize: '13px' }} className='info_header'>AVG PLACE</div>
+            <div className='info_header'>ELIMS</div>
+            <div className='info_header'>WINS</div>
+            <div className='info_header' onClick={nextPage}>PTS</div>
+            {showGamesColumn && <div onClick={nextPage} className='info_header'>GAMES</div>}
+        </div>
+    );
+
+    const renderRows = (items, cascadeOffset = 0) => items.map((data, index) => {
+        const positionChange = Math.abs(data.positionChange || 0);
+        let animationOrder;
+        if (positionChange >= 500) animationOrder = 1;
+        else if (positionChange >= 100) animationOrder = 2;
+        else if (positionChange >= 50) animationOrder = 3;
+        else if (positionChange >= 10) animationOrder = 4;
+        else if (positionChange > 0) animationOrder = 5;
+        else animationOrder = index + 6;
+
+        return (
+            <Row
+                key={`${data.teamId || data.teamname}-${data.place}`}
+                rank={data.place}
+                teamname={data.teamname}
+                points={data.points}
+                elims={data.elims}
+                wins={data.wins}
+                games={data.games}
+                avg_place={data.avg_place}
+                order={animationOrder}
+                showGamesColumn={showGamesColumn}
+                onClick={() => handleTeamClick(data.teamname)}
+                positionChange={data.positionChange}
+                showPositionIndicators={showPositionIndicators}
+                animationEnabled={animationEnabled && data.hasPositionChanged}
+                hasPositionChanged={data.hasPositionChanged || false}
+                cascadeFadeEnabled={cascadeFadeEnabled}
+                cascadeIndex={cascadeOffset + index}
+                alive={data.alive}
+                showFlags={showFlags}
+                memberData={data.memberData}
+            />
+        );
+    });
 
     return (
         <div className='reload'>
@@ -606,61 +612,18 @@ function LeaderboardReload() {
                     fontWeight: 'bold'
                 }}>Classement | Finale Reload Duos</div>
 
-                <div className='leaderboard_table'>
-                    <div className='header_container'>
-                        <div className='rank_header' onClick={previousPage}>PLACE</div>
-                        <div className='name_header'>ÉQUIPES</div>
-                        <div style={{ fontSize: '13px' }} className='info_header'>AVG PLACE</div>
-                        <div className='info_header'>ELIMS</div>
-                        <div className='info_header'>WINS</div>
-                        <div className='info_header' onClick={nextPageFromPoints}>POINTS</div>
-                        {showGamesColumn && <div onClick={nextPageFromGames} className='info_header'>GAMES</div>}
+                <div className='dual_leaderboard two-columns'>
+                    <div className='leaderboard_column'>
+                        {renderHeader()}
+                        {renderRows(leftItems, 0)}
                     </div>
-                    {displayedLeaderboard.map((data, index) => {
-                        const positionChange = Math.abs(data.positionChange || 0);
-                        let animationOrder;
+                    <div className='leaderboard_column'>
+                        {renderHeader()}
+                        {renderRows(rightItems, 10)}
+                    </div>
+                </div>
 
-                        if (positionChange >= 500) {
-                            animationOrder = 1;
-                        } else if (positionChange >= 100) {
-                            animationOrder = 2;
-                        } else if (positionChange >= 50) {
-                            animationOrder = 3;
-                        } else if (positionChange >= 10) {
-                            animationOrder = 4;
-                        } else if (positionChange > 0) {
-                            animationOrder = 5;
-                        } else {
-                            animationOrder = index + 6;
-                        }
-
-                        return (
-                            <Row
-                                key={`${data.teamId || data.teamname}-${data.place}`}
-                                rank={data.place}
-                                teamname={data.teamname}
-                                points={data.points}
-                                elims={data.elims}
-                                wins={data.wins}
-                                games={data.games}
-                                avg_place={data.avg_place}
-                                order={animationOrder}
-                                showGamesColumn={showGamesColumn}
-                                onClick={() => handleTeamClick(data.teamname)}
-                                positionChange={data.positionChange}
-                                showPositionIndicators={showPositionIndicators}
-                                animationEnabled={animationEnabled && data.hasPositionChanged}
-                                hasPositionChanged={data.hasPositionChanged || false}
-                                cascadeFadeEnabled={cascadeFadeEnabled}
-                                cascadeIndex={index}
-                                alive={data.alive}
-                                showFlags={showFlags}
-                                memberData={data.memberData}
-                            />
-                        );
-                    })}
-
-                    {selectedTeam && teamDetails[selectedTeam] && (
+                {selectedTeam && teamDetails[selectedTeam] && (
                         <div className='modal_overlay' onClick={closeModal}>
                             <div className='modal_content' onClick={(e) => e.stopPropagation()}>
                                 <div className='modal_header'>
@@ -749,7 +712,6 @@ function LeaderboardReload() {
                             </div>
                         </div>
                     )}
-                </div>
             </div>
         </div>
     );
