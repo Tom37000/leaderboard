@@ -9,11 +9,15 @@
 
 .reload .dual_leaderboard {
   position: absolute;
-  width: 100%;
+  left: 0;
+  right: 0;
+  width: auto;
   top: 166px;
   display: flex;
   justify-content: center;
-  gap: 30px;
+  gap: 20px;
+  padding: 0 12px;
+  box-sizing: border-box;
   transition: gap 0.4s ease;
 }
 
@@ -25,6 +29,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
 }
 
 .reload .leaderboard_column.second-column {
@@ -38,7 +43,7 @@
 
 .reload .two-columns .row_container,
 .reload .two-columns .header_container {
-  gap: 8px;
+  gap: 6px;
 }
 
 .reload .two-columns .row_container .rank_container {
@@ -47,26 +52,42 @@
 }
 
 .reload .two-columns .header_container .rank_header {
-  width: 80px;
+  width: 78px;
   margin-left: 0px;
+  padding-left: 4px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
 }
 
 .reload .two-columns .row_container .name_container {
-  width: 430px;
+  width: 415px;
   overflow: visible;
 }
 
 .reload .two-columns .header_container .name_header {
-  width: 430px;
+  width: 415px;
 }
 
 .reload .two-columns .row_container .info_box {
-  width: 78px;
+  width: 74px;
   font-size: 20px;
 }
 
 .reload .two-columns .header_container .info_header {
-  width: 78px;
+  width: 74px;
+}
+
+.reload .two-columns .header_container .info_header.games_header {
+  width: 84px;
+  box-sizing: border-box;
+  padding-left: 4px;
+  white-space: nowrap;
+}
+
+.reload .two-columns .row_container .info_box.games_box {
+  width: 84px;
 }
 
 .reload .leaderboard_container {

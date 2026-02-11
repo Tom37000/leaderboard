@@ -154,7 +154,7 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
             <div className='info_box'>{elims}</div>
             <div className='info_box'>{wins}</div>
             <div className='info_box'>{points}</div>
-            {showGamesColumn && <div className='info_box'>{games}</div>}
+            {showGamesColumn && <div className='info_box games_box'>{games}</div>}
         </div>
     );
 }, (prevProps, nextProps) => {
@@ -546,7 +546,7 @@ function LeaderboardReload() {
             <div className='info_header'>ELIMS</div>
             <div className='info_header'>WINS</div>
             <div className='info_header' onClick={nextPage}>PTS</div>
-            {showGamesColumn && <div onClick={nextPage} className='info_header'>GAMES</div>}
+            {showGamesColumn && <div onClick={nextPage} className='info_header games_header'>GAMES</div>}
         </div>
     );
 

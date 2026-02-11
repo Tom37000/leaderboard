@@ -1,248 +1,311 @@
 import './overlay_joueurs_envie.css';
-import React, { useState, useEffect, useRef } from "react"
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
-function computeNameFontSize(text) {
-  const len = (text || '').length;
-  if (len <= 22) return '18pt';
-  if (len <= 28) return '16pt';
-  if (len <= 36) return '14pt';
-  if (len <= 44) return '13pt';
-  if (len <= 52) return '12pt';
-  return '11pt';
+const PAGE_SIZE = 10;
+const MAX_ENTRIES = 50;
+const PAGE_INTERVAL_MS = 20000;
+const REFRESH_INTERVAL_DEFAULT_MS = 10000;
+const REFRESH_INTERVAL_ALIVE_MS = 2000;
+const NAME_FONT_MAX = 28;
+const NAME_FONT_MIN = 7;
+const NAME_LETTER_SPACING_EM = 0.025;
+const NAME_RIGHT_SAFETY_PX = 26;
+const NAME_FIT_SAFETY_FACTOR = 0.94;
+
+function mapEntriesToRows(entries) {
+  return entries
+    .map((team) => {
+      const members = team?.members ? Object.values(team.members) : [];
+      const stats = team?.stats || {};
+
+      const teamName = members.length
+        ? members
+            .map((member) => member?.name || '')
+            .filter(Boolean)
+            .sort()
+            .join(' - ')
+        : (team?.name || '');
+
+      return {
+        rank: Number(team?.rank || 9999),
+        place: Number(team?.rank || 0),
+        points: Number(stats?.[1] || 0),
+        teamName,
+        alive: (team?.flags & 2) === 2,
+      };
+    })
+    .filter((row) => row.teamName)
+    .sort((a, b) => (a.rank - b.rank) || (b.points - a.points))
+    .slice(0, MAX_ENTRIES)
+    .map(({ place, teamName, points, alive }) => ({ place, teamName, points, alive }));
 }
 
-function Row({ rank, teamname, points, elims, avg_place, wins, index, alive }) {
-    const nameRef = useRef(null);
-    const [fontSizePx, setFontSizePx] = useState(parseInt(computeNameFontSize(teamname)) || 18);
+function applySimulatedAliveStatus(rows, { enabled, onlyAlive, forcedCount }) {
+  if (!enabled) {
+    return rows;
+  }
 
-    useEffect(() => {
-        const el = nameRef.current;
-        if (!el) return;
-        let size = parseInt(computeNameFontSize(teamname)) || 18;
-        const min = 6;
-        el.style.fontSize = `${size}px`;
+  if (onlyAlive) {
+    return rows.map((row) => ({ ...row, alive: true }));
+  }
 
-        const client = el.clientWidth;
-        const scroll = el.scrollWidth;
+  if (!rows.length) {
+    return rows;
+  }
 
-        if (client > 0 && scroll > client) {
-            const scale = client / scroll;
-            let newSize = Math.max(min, Math.floor(size * scale));
-            el.style.fontSize = `${newSize}px`;
+  let aliveCount;
+  if (!Number.isNaN(forcedCount)) {
+    aliveCount = Math.max(0, Math.min(rows.length, forcedCount));
+  } else {
+    const minAlive = Math.max(1, Math.floor(rows.length * 0.3));
+    const maxAlive = Math.max(minAlive, Math.floor(rows.length * 0.7));
+    aliveCount = Math.floor(Math.random() * (maxAlive - minAlive + 1)) + minAlive;
+  }
 
-            let safety = 0;
-            while (el.scrollWidth > el.clientWidth && newSize > min && safety < 10) {
-                newSize -= 1;
-                el.style.fontSize = `${newSize}px`;
-                safety++;
-            }
-            size = newSize;
-        }
+  const indices = Array.from({ length: rows.length }, (_, index) => index);
+  for (let i = indices.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  const aliveSet = new Set(indices.slice(0, aliveCount));
 
-        setFontSizePx(size);
-    }, [teamname]);
+  return rows.map((row, index) => ({ ...row, alive: aliveSet.has(index) }));
+}
 
-    return (
-        <>
-            <div className={`rank ${alive ? '' : 'dimmed'}`}>{rank}</div>
-            <div className={`name-and-vr ${alive ? 'alive' : 'dimmed'}`}>
-                <div
-                    className='name'
-                    ref={nameRef}
-                    style={{ fontSize: `${fontSizePx}px` }}
-                >
-                    {teamname}
-                </div>
-                <div className='info points'>{Math.round(points)}</div>
-            </div>
-        </>
-    )
+function OverlayRow({ row, index, nameFontPx }) {
+  return (
+    <div className={`popup-row ${row.alive ? 'is-alive' : 'is-dead'}`} style={{ '--row-index': `${index}` }}>
+      <div className='popup-team-rank'>{row.place}</div>
+      <div className='popup-team-name'>
+        <span className='popup-team-name-inner'>
+          {row.alive ? <span className='popup-alive-icon' aria-hidden='true' /> : null}
+          <span className='popup-team-name-text' style={{ fontSize: `${nameFontPx}px` }}>
+            {row.teamName}
+          </span>
+        </span>
+      </div>
+      <div className='popup-team-points'>{row.points === '' ? '' : Math.round(Number(row.points) || 0)}</div>
+    </div>
+  );
 }
 
 function PopUpLeaderboard() {
+  const search = useLocation().search;
+  const params = new URLSearchParams(search);
+  const leaderboardId = params.get('id');
+  const onlyAlive = params.get('alive') === 'true' || params.get('alive') === '1';
+  const simulateAlive = params.get('simulate_alive') === 'true' || params.get('simulate_alive') === '1';
+  const simulateAliveCount = Number.parseInt(
+    params.get('simulate_alive_count') || params.get('simulate_alive_top') || '',
+    10,
+  );
 
-    const search = useLocation().search;
-    const params = new URLSearchParams(search);
-    const leaderboard_id = params.get('id');
-    const aliveParam = params.get('alive');
-    const onlyAlive = aliveParam === 'true' || aliveParam === '1';
-    const restoreFullOnEndParam = params.get('restore_full_on_end');
-    const restoreFullOnEnd = restoreFullOnEndParam === null
-        ? true 
-        : (restoreFullOnEndParam === 'true' || restoreFullOnEndParam === '1');
+  const [rows, setRows] = useState([]);
+  const [page, setPage] = useState(0);
+  const [nameFontPx, setNameFontPx] = useState(NAME_FONT_MAX);
+  const dataLayerRef = useRef(null);
 
-    const simulateAliveParam = params.get('simulate_alive');
-    const simulateAliveRandomCountParam = params.get('simulate_alive_count');
-    const simulateAliveTopParam = params.get('simulate_alive_top');
-    const simulateAlive = simulateAliveParam === 'true' || simulateAliveParam === '1';
-    const simulateAliveCount = simulateAliveRandomCountParam
-        ? parseInt(simulateAliveRandomCountParam, 10)
-        : (simulateAliveTopParam ? parseInt(simulateAliveTopParam, 10) : 10);
+  useEffect(() => {
+    let cancelled = false;
 
-    const [allEntries, setAllEntries] = useState([])
-    const [page, setPage] = useState(0)
-    const [transition, setTransition] = useState('fade')
-    const [isHidden, setIsHidden] = useState(false)
-    const hideTimerRef = useRef(null)
-    const prevAliveCountRef = useRef(0)
+    const fetchData = async () => {
+      if (!leaderboardId) {
+        setRows([]);
+        return;
+      }
 
-    useEffect(() => {
-
-        const fetch_data = () => {
-
-            const queries = { queries: [{ range: { from: 0, to: 50000 }, flags: 1 }], flags: 1 };
-            fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}/v7/query`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(queries),
-            })
-                .then((response) => response.json())
-                .then(data => {
-                    const safeEntries = Array.isArray(data?.queries?.[0]?.entries) ? data.queries[0].entries : [];
-                    let leaderboard_list = []
-                    for (let team of safeEntries) {
-                        const members = team?.members ? Object.values(team.members) : [];
-                        const stats = team?.stats || {};
-                        leaderboard_list.push({
-                            teamname: members.map(member => member.name).sort().join(' - '),
-                            elims: stats[107] || 0,
-                            avg_place: stats[102] || 0,
-                            wins: stats[104] || 0,
-                            place: team?.rank || 0,
-                            points: stats[1] || 0,
-                            alive: (team?.flags & 2) === 2
-                        })
-                    }
-                    leaderboard_list.sort((a, b) => (a.place - b.place) || (b.points - a.points))
-
-                    if (simulateAlive) {
-                        const n = Math.max(0, Math.min(leaderboard_list.length, isNaN(simulateAliveCount) ? 10 : simulateAliveCount));
-                        const indices = Array.from({ length: leaderboard_list.length }, (_, i) => i);
-                        for (let i = indices.length - 1; i > 0; i--) {
-                            const j = Math.floor(Math.random() * (i + 1));
-                            [indices[i], indices[j]] = [indices[j], indices[i]];
-                        }
-                        const picked = new Set(indices.slice(0, n));
-                        leaderboard_list = leaderboard_list.map((entry, idx) => ({
-                            ...entry,
-                            alive: entry.alive || picked.has(idx)
-                        }));
-                    }
-
-                    setAllEntries(leaderboard_list)
-                }
-
-                )
-        }
-
-
-        fetch_data()
-        const interval = setInterval(fetch_data, 10000)
-        return () => clearInterval(interval)
-
-
-    }, [leaderboard_id])
-
-    const aliveCount = allEntries.filter(item => item.alive).length;
-    const showAliveOnly = onlyAlive
-        ? true
-        : (aliveCount === 0 ? !restoreFullOnEnd : aliveCount <= 10);
-    useEffect(() => {
-        const prev = prevAliveCountRef.current;
-        if (prev > 0 && aliveCount === 0) {
-            setIsHidden(true);
-            if (hideTimerRef.current) {
-                clearTimeout(hideTimerRef.current);
-            }
-            hideTimerRef.current = setTimeout(() => {
-                setIsHidden(false);
-                hideTimerRef.current = null;
-            }, 120000);
-        }
-        if (aliveCount > 0 && isHidden) {
-            setIsHidden(false);
-            if (hideTimerRef.current) {
-                clearTimeout(hideTimerRef.current);
-                hideTimerRef.current = null;
-            }
-        }
-        prevAliveCountRef.current = aliveCount;
-        return () => {
-            if (hideTimerRef.current) {
-                clearTimeout(hideTimerRef.current);
-                hideTimerRef.current = null;
-            }
+      try {
+        const payload = {
+          queries: [{ range: { from: 0, to: 50000 }, flags: 1 }],
+          flags: 1,
         };
-    }, [aliveCount, isHidden]);
 
-    useEffect(() => {
-        const baseListLength = showAliveOnly
-            ? allEntries.filter(item => item.alive).length
-            : Math.min(50, allEntries.length);
-        const totalPages = Math.max(0, Math.ceil(baseListLength / 10) - 1);
-        if (page > totalPages) {
-            setTransition('fade');
-            setPage(totalPages);
+        const response = await fetch(`https://api.wls.gg/v5/leaderboards/${leaderboardId}/v7/query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        const entries = Array.isArray(data?.queries?.[0]?.entries) ? data.queries[0].entries : [];
+        const mappedRows = mapEntriesToRows(entries);
+        const effectiveRows = applySimulatedAliveStatus(mappedRows, {
+          enabled: simulateAlive,
+          onlyAlive,
+          forcedCount: simulateAliveCount,
+        });
+
+        if (!cancelled) {
+          setRows(effectiveRows);
         }
-    }, [allEntries, showAliveOnly]);
-
-    useEffect(() => {
-        if (!showAliveOnly && !isHidden) {
-            const timer = setInterval(() => {
-                setTransition('next');
-                setPage(prev => {
-                    const totalPages = Math.max(0, Math.ceil(Math.min(50, allEntries.length) / 10) - 1);
-                    return (prev + 1) % (totalPages + 1);
-                });
-            }, 30000);
-            return () => clearInterval(timer);
+      } catch (error) {
+        if (!cancelled) {
+          setRows([]);
         }
-    }, [showAliveOnly, allEntries.length, isHidden]);
+      }
+    };
 
-    function nextPage() {
-        setTransition('next');
-        const baseListLength = showAliveOnly ? allEntries.filter(item => item.alive).length : Math.min(50, allEntries.length);
-        const totalPages = Math.max(0, Math.ceil(baseListLength / 10) - 1);
-        setPage(prev => (prev < totalPages ? prev + 1 : 0));
+    fetchData();
+
+    if (!leaderboardId) {
+      return () => {
+        cancelled = true;
+      };
     }
 
-    function previousPage() {
-        setTransition('prev');
-        const baseListLength = showAliveOnly ? allEntries.filter(item => item.alive).length : Math.min(50, allEntries.length);
-        const totalPages = Math.max(0, Math.ceil(baseListLength / 10) - 1);
-        setPage(prev => (prev > 0 ? prev - 1 : totalPages));
+    const refreshInterval = onlyAlive ? REFRESH_INTERVAL_ALIVE_MS : REFRESH_INTERVAL_DEFAULT_MS;
+    const interval = setInterval(fetchData, refreshInterval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [leaderboardId, simulateAlive, onlyAlive, simulateAliveCount]);
+
+  const sourceRows = useMemo(() => {
+    if (onlyAlive) {
+      return rows.filter((row) => row.alive).slice(0, PAGE_SIZE);
+    }
+    return rows.slice(0, MAX_ENTRIES);
+  }, [rows, onlyAlive]);
+
+  const totalPages = onlyAlive ? 1 : Math.max(1, Math.ceil(sourceRows.length / PAGE_SIZE));
+
+  useEffect(() => {
+    if (onlyAlive) {
+      if (page !== 0) {
+        setPage(0);
+      }
+      return;
+    }
+    if (page > totalPages - 1) {
+      setPage(0);
+    }
+  }, [page, totalPages, onlyAlive]);
+
+  useEffect(() => {
+    if (onlyAlive || totalPages <= 1) {
+      return undefined;
     }
 
-    const baseList = showAliveOnly ? allEntries.filter(item => item.alive) : allEntries.slice(0, Math.min(50, allEntries.length));
-    const displayed = baseList.slice(page * 10, page * 10 + 10);
+    const interval = setInterval(() => {
+      setPage((prev) => (prev + 1) % totalPages);
+    }, PAGE_INTERVAL_MS);
 
-    if (isHidden) {
-        return null;
+    return () => clearInterval(interval);
+  }, [onlyAlive, totalPages]);
+
+  const displayedRows = useMemo(() => {
+    if (onlyAlive) {
+      return sourceRows.slice(0, PAGE_SIZE);
     }
+    const start = page * PAGE_SIZE;
+    return sourceRows.slice(start, start + PAGE_SIZE);
+  }, [sourceRows, page, onlyAlive]);
 
-    return (
-        <div className='overlay_joueurs_'>
+  const paddedRows = useMemo(() => {
+    return Array.from({ length: PAGE_SIZE }, (_, index) => {
+      return displayedRows[index] || { place: '', teamName: '', points: '', alive: false };
+    });
+  }, [displayedRows]);
 
-            <div className='leaderboard_container_prod'>
-                <div className={`leaderboard_table_prod page_transition ${transition === 'next' ? 'slide-left' : transition === 'prev' ? 'slide-right' : ''}`} key={`page-${page}`}>
+  useEffect(() => {
+    const computeTextWidth = (ctx, text, fontSize) => {
+      ctx.font = `900 ${fontSize}px OmnesBlack, Eurostile, sans-serif`;
+      const base = ctx.measureText(text).width;
+      const spacing = Math.max(0, text.length - 1) * fontSize * NAME_LETTER_SPACING_EM;
+      return base + spacing + 2;
+    };
 
-                    <div className='rank header' onClick={previousPage}>#</div>
-                    <div className='name-and-vr header'>
-                        <div className='name header'>ÉQUIPES</div>
-                        <div className='wins header' onClick={nextPage}>PTS</div>
-                    </div>
+    const recalcSharedFontSize = () => {
+      const layerEl = dataLayerRef.current;
+      if (!layerEl) {
+        return;
+      }
 
-                    {displayed.map((data, index) => (
-                        <Row key={`${data.teamname}-${index}`} index={index} rank={data.place} teamname={data.teamname} points={data.points} elims={data.elims} wins={data.wins} avg_place={data.avg_place} alive={data.alive} />
-                    ))}
-                </div>
-            </div>
+      const rowEls = Array.from(layerEl.querySelectorAll('.popup-row'));
+      if (!rowEls.length) {
+        setNameFontPx(NAME_FONT_MAX);
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return;
+      }
+
+      let targetSize = NAME_FONT_MAX;
+      let hasNamedRow = false;
+
+      paddedRows.forEach((row, index) => {
+        if (!row.teamName) {
+          return;
+        }
+        hasNamedRow = true;
+
+        const rowEl = rowEls[index];
+        const nameContainerEl = rowEl?.querySelector('.popup-team-name');
+        if (!nameContainerEl) {
+          return;
+        }
+
+        const iconEl = rowEl.querySelector('.popup-alive-icon');
+        const innerEl = rowEl.querySelector('.popup-team-name-inner');
+        const innerStyle = innerEl ? window.getComputedStyle(innerEl) : null;
+        const gapWidth = innerStyle ? Number.parseFloat(innerStyle.columnGap || innerStyle.gap || '0') || 0 : 0;
+        const iconWidth = iconEl ? iconEl.offsetWidth + gapWidth : 0;
+        const availableWidth = Math.max(12, nameContainerEl.clientWidth - iconWidth - NAME_RIGHT_SAFETY_PX);
+
+        let fittedSize = NAME_FONT_MAX;
+        const baseWidth = computeTextWidth(ctx, row.teamName, NAME_FONT_MAX);
+        if (baseWidth > 0) {
+          fittedSize = Math.floor((availableWidth / baseWidth) * NAME_FONT_MAX * NAME_FIT_SAFETY_FACTOR);
+        }
+        fittedSize = Math.max(NAME_FONT_MIN, Math.min(NAME_FONT_MAX, fittedSize));
+
+        while (computeTextWidth(ctx, row.teamName, fittedSize) > availableWidth && fittedSize > NAME_FONT_MIN) {
+          fittedSize -= 1;
+        }
+
+        targetSize = Math.min(targetSize, fittedSize);
+      });
+
+      setNameFontPx(hasNamedRow ? Math.max(NAME_FONT_MIN, targetSize) : NAME_FONT_MAX);
+    };
+
+    const frameId = window.requestAnimationFrame(recalcSharedFontSize);
+    const resizeObserver = new ResizeObserver(recalcSharedFontSize);
+    if (dataLayerRef.current) {
+      resizeObserver.observe(dataLayerRef.current);
+    }
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        recalcSharedFontSize();
+      });
+    }
+    window.addEventListener('resize', recalcSharedFontSize);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', recalcSharedFontSize);
+    };
+  }, [paddedRows]);
+
+  return (
+    <div className='overlay_joueurs_'>
+      <div className='popup-overlay'>
+        <div className='popup-background' />
+
+        <div className='popup-data-layer' ref={dataLayerRef}>
+          {paddedRows.map((row, index) => (
+            <OverlayRow row={row} index={index} nameFontPx={nameFontPx} key={`overlay-row-${index}`} />
+          ))}
         </div>
-
-    )
+      </div>
+    </div>
+  );
 }
 
-export default PopUpLeaderboard
+export default PopUpLeaderboard;

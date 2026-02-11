@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/leaderboard/build/static/css/main.bcdd3684.css",
-    "main.js": "/leaderboard/build/static/js/main.999c70a6.js",
+    "main.css": "/leaderboard/build/static/css/main.a4c5cf8a.css",
+    "main.js": "/leaderboard/build/static/js/main.5bb12413.js",
     "static/js/453.98276a77.chunk.js": "/leaderboard/build/static/js/453.98276a77.chunk.js",
     "static/media/stizogw_background.png": "/leaderboard/build/static/media/stizogw_background.dab4d340def933776031.png",
     "static/media/stizo_cup_honda_background.png": "/leaderboard/build/static/media/stizo_cup_honda_background.f9604cfe7796019e0866.png",
@@ -19,18 +19,19 @@
     "static/media/fond2.png": "/leaderboard/build/static/media/fond2.98c3026bb83e7b3638a5.png",
     "static/media/wolt_character.png": "/leaderboard/build/static/media/wolt_character.749771f67862b91fb4db.png",
     "static/media/OmnesBlack.ttf": "/leaderboard/build/static/media/OmnesBlack.c4d8a67bd6359132ef90.ttf",
+    "static/media/OVERLAY_POPUP.png": "/leaderboard/build/static/media/OVERLAY_POPUP.3493ad9a0af71b277529.png",
     "static/media/solary.png": "/leaderboard/build/static/media/solary.aabb80d69f4980009ffb.png",
     "static/media/havok.png": "/leaderboard/build/static/media/havok.e510328687d945ecaff0.png",
     "static/media/MonumentExtended-Regular.ttf": "/leaderboard/build/static/media/MonumentExtended-Regular.f35eddda936a43d931f7.ttf",
     "static/media/Eurostile.otf": "/leaderboard/build/static/media/Eurostile.5af602eec7a5fddc3fd4.otf",
     "static/media/good_times.OTF": "/leaderboard/build/static/media/good_times.a86d4f7f5cdb8cf2e409.OTF",
     "index.html": "/leaderboard/build/index.html",
-    "main.bcdd3684.css.map": "/leaderboard/build/static/css/main.bcdd3684.css.map",
-    "main.999c70a6.js.map": "/leaderboard/build/static/js/main.999c70a6.js.map",
+    "main.a4c5cf8a.css.map": "/leaderboard/build/static/css/main.a4c5cf8a.css.map",
+    "main.5bb12413.js.map": "/leaderboard/build/static/js/main.5bb12413.js.map",
     "453.98276a77.chunk.js.map": "/leaderboard/build/static/js/453.98276a77.chunk.js.map"
   },
   "entrypoints": [
-    "/leaderboard/static/css/main.bcdd3684.css",
-    "/leaderboard/static/js/main.999c70a6.js"
+    "/leaderboard/static/css/main.a4c5cf8a.css",
+    "/leaderboard/static/js/main.5bb12413.js"
   ]
 }
