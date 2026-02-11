@@ -125,7 +125,7 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
             </div>
             <div className='name_container' style={{
                 cursor: 'pointer',
-                fontSize: teamname.length > 70 ? '7px' : teamname.length > 65 ? '8px' : teamname.length > 60 ? '9px' : teamname.length > 55 ? '10px' : teamname.length > 50 ? '11px' : teamname.length > 45 ? '12px' : teamname.length > 40 ? '13px' : teamname.length > 35 ? '14px' : teamname.length > 30 ? '15px' : teamname.length > 25 ? '17px' : teamname.length > 20 ? '19px' : teamname.length > 15 ? '21px' : '24px',
+                fontSize: teamname.length > 70 ? '6px' : teamname.length > 65 ? '7px' : teamname.length > 60 ? '7px' : teamname.length > 55 ? '8px' : teamname.length > 50 ? '9px' : teamname.length > 45 ? '10px' : teamname.length > 40 ? '11px' : teamname.length > 35 ? '12px' : teamname.length > 30 ? '13px' : teamname.length > 25 ? '14px' : teamname.length > 20 ? '16px' : teamname.length > 15 ? '17px' : '19px',
                 whiteSpace: 'nowrap',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.7)'
             }} onClick={onClick}>

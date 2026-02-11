@@ -52,22 +52,21 @@
 }
 
 .reload .two-columns .row_container .name_container {
-  width: 380px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  width: 430px;
+  overflow: visible;
 }
 
 .reload .two-columns .header_container .name_header {
-  width: 380px;
+  width: 430px;
 }
 
 .reload .two-columns .row_container .info_box {
-  width: 85px;
+  width: 78px;
   font-size: 20px;
 }
 
 .reload .two-columns .header_container .info_header {
-  width: 85px;
+  width: 78px;
 }
 
 .reload .leaderboard_container {
@@ -135,12 +134,12 @@
 }
 
 .reload .flag_icon {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  margin-right: 6px;
+  margin-right: 4px;
 }
 
 .reload .member_with_flag {
