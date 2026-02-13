@@ -1,7 +1,11 @@
 import './LeaderboardTest.css';
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useLocation } from 'react-router-dom';
 import fondImage from './fond2.png';
+
+function normalizeSessionId(value) {
+    return String(value || '').toLowerCase().replace(/-/g, '').trim();
+}
 
 function Row({ rank, teamname, points, elims, wins, index, alive, positionChange, showPositionIndicators, games, showFlags, memberData }) {
     const getRankClass = () => {
@@ -69,12 +73,35 @@ function Row({ rank, teamname, points, elims, wins, index, alive, positionChange
     )
 }
 
+function parseExcludedSessionIds(urlParams) {
+    const values = [
+        ...urlParams.getAll('exclude_session_id'),
+        ...urlParams.getAll('exclude_session'),
+        ...urlParams.getAll('exclude_session_ids'),
+    ];
+
+    return new Set(
+        values
+            .flatMap((value) => String(value || '').split(','))
+            .map((value) => normalizeSessionId(value))
+            .filter(Boolean)
+    );
+}
+
 function LeaderboardTest() {
 
-    const leaderboard_id = new URLSearchParams(useLocation().search).get('id');
     const location = useLocation();
     const urlParams = new URLSearchParams(location.search);
+    const leaderboard_id = urlParams.get('id');
     const flagsParam = urlParams.get('flags');
+    const excludedSessionIds = useMemo(
+        () => parseExcludedSessionIds(new URLSearchParams(location.search)),
+        [location.search]
+    );
+    const excludedSessionIdsKey = useMemo(
+        () => Array.from(excludedSessionIds).sort().join(','),
+        [excludedSessionIds]
+    );
 
     const [leaderboard, setLeaderboard] = useState(null)
     const [page, setPage] = useState(0)
@@ -111,6 +138,7 @@ function LeaderboardTest() {
         const fetch_data = async () => {
             try {
                 let aliveByTeamname = {};
+                let v7SessionsByTeamname = {};
                 try {
                     const v7Response = await fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}/v7/query`, {
                         method: 'POST',
@@ -124,6 +152,7 @@ function LeaderboardTest() {
                             membersArr.sort((a, b) => a.id.localeCompare(b.id));
                             const nameJoined = membersArr.map(m => m.name).join(' - ');
                             aliveByTeamname[nameJoined] = ((entry.flags & 2) === 2);
+                            v7SessionsByTeamname[nameJoined] = Array.isArray(entry.sessions) ? entry.sessions : [];
                         }
                     }
                 } catch (e) {
@@ -134,11 +163,19 @@ function LeaderboardTest() {
                 const data = await response.json();
                 let leaderboard_list = []
                 for (let team in data.teams) {
-                    const members = Object.values(data.teams[team].members);
+                    const teamData = data.teams[team];
+                    const members = Object.values(teamData.members || {});
                     members.sort((a, b) => a.id.localeCompare(b.id));
                     const teamname = members.map(member => member.name).join(' - ');
-                    const sessions = Object.values(data.teams[team].sessions);
+                    const allSessionEntries = Object.entries(teamData.sessions || {});
+                    const sessions = allSessionEntries
+                        .filter(([sessionId]) => !excludedSessionIds.has(normalizeSessionId(sessionId)))
+                        .map(([, session]) => session);
                     const gamesCount = sessions.length;
+
+                    if (excludedSessionIds.size > 0 && gamesCount === 0) {
+                        continue;
+                    }
 
                     const memberData = showFlags ? members.map(member => {
                         const epicId = member.ingame_id || member.id;
@@ -149,21 +186,71 @@ function LeaderboardTest() {
                         };
                     }) : [];
 
+                    const totalElims = sessions.reduce((acc, session) => acc + (session.kills || 0), 0);
+                    const totalWins = sessions.reduce((acc, session) => acc + ((session.place === 1) ? 1 : 0), 0);
+                    const avgPlace = gamesCount > 0
+                        ? sessions.reduce((acc, session) => acc + (session.place || 0), 0) / gamesCount
+                        : 0;
+
+                    const apiPoints = Number(teamData.points || 0);
+                    let adjustedPoints = apiPoints;
+                    if (excludedSessionIds.size > 0) {
+                        const v7SessionsForTeam = v7SessionsByTeamname[teamname] || [];
+                        const excludedV7Sessions = v7SessionsForTeam
+                            .filter((session) => excludedSessionIds.has(normalizeSessionId(session?.id)));
+
+                        if (excludedV7Sessions.length > 0) {
+                            const excludedV7Points = excludedV7Sessions.reduce(
+                                (acc, session) => acc + Number(session?.metrics?.['1'] ?? session?.metrics?.['-1000'] ?? 0),
+                                0
+                            );
+                            adjustedPoints = Math.max(0, apiPoints - excludedV7Points);
+                        } else {
+                            const allSessions = allSessionEntries.map(([, session]) => session);
+                            const hasPerSessionPoints = allSessions.length > 0 && allSessions.every(
+                                (session) => typeof session?.points === 'number'
+                            );
+
+                            if (hasPerSessionPoints) {
+                                adjustedPoints = sessions.reduce((acc, session) => acc + Number(session.points || 0), 0);
+                            } else {
+                                const ratio = allSessionEntries.length > 0 ? (gamesCount / allSessionEntries.length) : 1;
+                                adjustedPoints = Math.max(0, Math.round(apiPoints * ratio));
+                            }
+                        }
+                    }
+
                     leaderboard_list.push({
                         teamname: teamname,
-                        elims: sessions.map(session => session.kills).reduce((acc, curr) => acc + curr, 0),
-                        avg_place: sessions.map(session => session.place).reduce((acc, curr, _, arr) => acc + curr / arr.length, 0),
-                        wins: sessions.map(session => session.place).reduce((acc, curr) => acc + (curr === 1 ? 1 : 0), 0),
-                        place: data.teams[team].place,
-                        points: data.teams[team].points,
+                        elims: totalElims,
+                        avg_place: avgPlace,
+                        wins: totalWins,
+                        place: Number(teamData.place || 0),
+                        points: adjustedPoints,
                         alive: !!aliveByTeamname[teamname],
                         games: gamesCount,
                         memberData: memberData
                     })
                 }
 
+                if (excludedSessionIds.size > 0) {
+                    leaderboard_list.sort((a, b) =>
+                        (b.points - a.points) ||
+                        (b.wins - a.wins) ||
+                        (b.elims - a.elims) ||
+                        (a.avg_place - b.avg_place) ||
+                        a.teamname.localeCompare(b.teamname)
+                    );
+                    leaderboard_list = leaderboard_list.map((team, index) => ({
+                        ...team,
+                        place: index + 1
+                    }));
+                } else {
+                    leaderboard_list.sort((a, b) => (a.place - b.place) || (b.points - a.points));
+                }
 
-                const snapshotsKey = `ranks_snapshots_${leaderboard_id}`;
+
+                const snapshotsKey = `ranks_snapshots_${leaderboard_id}_${excludedSessionIdsKey || 'all'}`;
                 const rankSnapshots = JSON.parse(localStorage.getItem(snapshotsKey) || '{}');
                 const newIndicators = {};
 
@@ -204,7 +291,7 @@ function LeaderboardTest() {
         return () => clearInterval(interval)
 
 
-    }, [leaderboard_id, epicIdToCountry, showFlags])
+    }, [leaderboard_id, epicIdToCountry, showFlags, excludedSessionIds, excludedSessionIdsKey])
 
     function nextPage() {
         if (page < 8) {

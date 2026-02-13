@@ -29,6 +29,8 @@ body {
   width: min(calc((100vh - 4.4vh) * 0.6), calc(100vw - 4.4vh));
   max-height: calc(100vh - 4.4vh);
   aspect-ratio: 3 / 5;
+  border-radius: clamp(14px, 1.8vh, 28px);
+  overflow: hidden;
 }
 
 .popup-background {
@@ -38,11 +40,13 @@ body {
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
+  border-radius: inherit;
 }
 
 .popup-data-layer {
   position: absolute;
   inset: 0;
+  border-radius: inherit;
 
   --rows-start: 36.4%;
   --row-step: 6.245%;
