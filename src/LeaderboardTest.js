@@ -184,11 +184,17 @@ function LeaderboardTest() {
         return () => clearInterval(interval);
     }, [fetchData]);
 
+    const maxPage = useMemo(() => {
+        if (leaderboard.length <= 10) return 0;
+        return Math.ceil((leaderboard.length - 10) / 20);
+    }, [leaderboard.length]);
+
+    useEffect(() => {
+        setPage((prev) => Math.min(prev, maxPage));
+    }, [maxPage]);
+
     const nextPage = () => {
-        const maxPage = Math.max(0, Math.ceil(leaderboard.length / 20) - 1);
-        if (page < maxPage) {
-            setPage((prev) => prev + 1);
-        }
+        setPage((prev) => Math.min(prev + 1, maxPage));
     };
 
     const previousPage = () => {
@@ -199,8 +205,12 @@ function LeaderboardTest() {
 
     const closeModal = () => setSelectedTeam(null);
 
-    const firstColumnSlice = page === 0 ? [0, 10] : [page * 20, page * 20 + 10];
-    const secondColumnSlice = [page * 20 + 10, page * 20 + 20];
+    const firstColumnSlice = page === 0
+        ? [0, 10]
+        : [10 + (page - 1) * 20, 20 + (page - 1) * 20];
+    const secondColumnSlice = page === 0
+        ? [0, 0]
+        : [20 + (page - 1) * 20, 30 + (page - 1) * 20];
 
     return (
         <div className='choupixs_bsk'>
