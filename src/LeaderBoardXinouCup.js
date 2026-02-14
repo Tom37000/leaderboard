@@ -42,7 +42,7 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
                 display: 'inline-block',
                 marginLeft: '0px',
                 position: 'absolute',
-                right: '-32px',
+                right: '-36px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 pointerEvents: 'none'
@@ -118,6 +118,7 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
             <div className='rank_container' style={{
                 fontSize: rank >= 1000 ? '24px' : rank >= 100 ? '24px' : '26px',
                 paddingLeft: rank >= 1000 ? '16px' : rank >= 100 ? '12px' : rank >= 10 ? '4px' : '0px',
+                paddingRight: '8px',
 
             }}>
                 {rank}

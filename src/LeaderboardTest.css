@@ -305,10 +305,11 @@
 .choupixs_bsk .row_container .name_container {
     height: 54px;
     width: 520px !important;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
     align-items: center;
     justify-content: center;
-    padding: 0 15px;
+    padding: 0 14px 0 42px;
     position: relative;
     font-family: "Eurostile", sans-serif !important;
     font-size: 20px;
@@ -325,16 +326,27 @@
 }
 
 .choupixs_bsk .row_container .name_container .team_name {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: inline-flex;
+    grid-column: 1;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     white-space: nowrap;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.6px;
     text-align: center;
     text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.9);
     color: var(--accent-gold) !important;
     font-family: "Eurostile", sans-serif !important;
-    font-size: 24px !important;
+    line-height: 1;
+}
+
+.choupixs_bsk .row_container .name_container .alive-dot {
+    position: static;
+    margin: 0 8px 0 0;
 }
 
 .choupixs_bsk .flag_icon {
@@ -356,8 +368,9 @@
 }
 
 .choupixs_bsk .row_container .name_container .wins_badge {
-    position: absolute;
-    right: 10px;
+    position: static;
+    grid-column: 2;
+    justify-self: center;
     min-width: 40px;
     text-align: center;
     color: var(--accent-gold) !important;
@@ -429,18 +442,20 @@
 
 .choupixs_bsk .position_indicator {
     position: absolute;
-    right: -30px;
+    right: -34px;
     top: 50%;
     transform: translateY(-50%);
     font-size: 10px;
     font-weight: bold;
-    padding: 2px 5px;
+    padding: 2px 0;
     border-radius: 3px;
-    min-width: 20px;
+    width: 38px;
+    min-width: 38px;
     text-align: center;
     display: inline-block;
     pointer-events: none;
     border: 1px solid;
+    box-sizing: border-box;
 }
 
 .choupixs_bsk .position_indicator.positive {

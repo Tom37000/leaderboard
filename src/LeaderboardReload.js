@@ -1,5 +1,5 @@
 import './LeaderboardReload.css';
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useLocation } from 'react-router-dom';
 import { enrichWithPreviousLeaderboard, fetchUnifiedLeaderboardData, parseExcludedSessionIds } from './leaderboardShared';
 
@@ -42,7 +42,7 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
                 display: 'inline-block',
                 marginLeft: '0px',
                 position: 'absolute',
-                right: '-32px',
+                right: '-36px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 pointerEvents: 'none'
@@ -118,6 +118,7 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
             <div className='rank_container' style={{
                 fontSize: rank >= 1000 ? '24px' : rank >= 100 ? '24px' : '26px',
                 paddingLeft: rank >= 1000 ? '16px' : rank >= 100 ? '12px' : rank >= 10 ? '4px' : '0px',
+                paddingRight: '8px',
                 fontWeight: 'bold',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.7)'
             }}>
@@ -211,6 +212,8 @@ function LeaderboardReload() {
     const [cascadeFadeEnabled, setCascadeFadeEnabled] = useState(cascadeParam === 'true');
     const [previousLeaderboard, setPreviousLeaderboard] = useState(null);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const previousLeaderboardRef = useRef(null);
+    const isInitialLoadRef = useRef(true);
 
     useEffect(() => {
         if (showFlags) {
@@ -253,16 +256,19 @@ function LeaderboardReload() {
             setShowPositionIndicators(data.showPositionIndicators);
             setHasRefreshedOnce(true);
 
-            const merged = enrichWithPreviousLeaderboard(data.leaderboard, previousLeaderboard);
+            const previousData = previousLeaderboardRef.current;
+            const merged = enrichWithPreviousLeaderboard(data.leaderboard, previousData);
             setLeaderboard(merged.leaderboard);
             setTeamDetails(data.teamDetails);
             setPreviousLeaderboard(merged.leaderboard);
+            previousLeaderboardRef.current = merged.leaderboard;
 
-            if (typeof setIsInitialLoad === 'function' && isInitialLoad) {
+            if (isInitialLoadRef.current) {
                 setIsInitialLoad(false);
+                isInitialLoadRef.current = false;
             }
 
-            if (previousLeaderboard && merged.changedCount > 0) {
+            if (previousData && merged.changedCount > 0) {
                 setLastChangeTime(Date.now());
                 setAnimationEnabled(true);
                 setTimeout(() => { setAnimationEnabled(false); }, 2500);
@@ -539,9 +545,10 @@ function LeaderboardReload() {
     }
 
     useEffect(() => {
-        const supportSinglePage = totalApiPages === 1;
-        setShowGamesColumn(supportSinglePage);
-    }, [totalApiPages]);
+        if (!leaderboard || leaderboard.length === 0) return;
+        const hasMultipleGames = leaderboard.some((team) => team.games > 1);
+        setShowGamesColumn(hasMultipleGames);
+    }, [leaderboard]);
 
     const getFilteredLeaderboard = () => {
         if (!searchQuery) return leaderboard;

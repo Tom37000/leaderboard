@@ -133,9 +133,33 @@ html, body {
 .row_container {
   display: flex;
   gap: 7px;
+  align-items: center;
   opacity: 1;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateY(0);
+}
+
+.row_container > .rank_container,
+.row_container > .name_container,
+.row_container > .info_box {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+}
+
+.row_container .rank_container,
+.row_container .name_container,
+.row_container .info_box {
+  box-sizing: border-box !important;
+}
+
+.row_container > .name_container {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.row_container > .name_container .team_name {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .leaderboard_table {
@@ -156,6 +180,27 @@ html, body {
   gap: 7px;
 }
 
+.header_container > .rank_header,
+.header_container > .name_header,
+.header_container > .info_header {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+}
+
+.header_container .rank_header,
+.header_container .name_header,
+.header_container .info_header {
+  box-sizing: border-box !important;
+}
+
+.leaderboard_table > .header_container,
+.leaderboard_table > .row_container,
+.leaderboard_column > .header_container,
+.leaderboard_column > .row_container {
+  width: max-content;
+  min-width: max-content;
+}
+
 .leaderboard_container {
   width: 100vw;
   height: 100vh;
@@ -169,12 +214,15 @@ html, body {
   font-size: 16px;
   font-weight: bold;
   margin-left: 10px;
-  padding: 4px 8px;
+  padding: 2px 0 !important;
   border-radius: 6px;
   display: inline-block;
-  min-width: 24px;
+  width: 38px !important;
+  min-width: 38px !important;
   text-align: center;
   border: 2px solid transparent;
+  box-sizing: border-box;
+  line-height: 1.1;
 }
 
 .position_change.positive {

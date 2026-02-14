@@ -50,6 +50,32 @@ function Row({
         return <span className="position_indicator negative">{positionChange}</span>;
     };
 
+    const displayLabel = showFlags && memberData && memberData.length > 0
+        ? memberData.map((member) => member.name).join(' - ')
+        : teamname;
+
+    const estimatedPlayerCount = showFlags && memberData && memberData.length > 0
+        ? memberData.length
+        : displayLabel.split(' - ').length;
+
+    const getAutoFontSize = (length, playerCount) => {
+        const base = playerCount >= 3 ? 18 : 22;
+        const pivot = playerCount >= 3 ? 14 : 18;
+        const shrinkPerChar = playerCount >= 3 ? 0.62 : 0.48;
+        const computed = base - Math.max(0, length - pivot) * shrinkPerChar;
+        return Math.max(8, Math.min(22, Math.round(computed)));
+    };
+
+    const getLetterSpacing = (fontSize) => {
+        if (fontSize >= 20) return '0.6px';
+        if (fontSize >= 16) return '0.4px';
+        return '0.2px';
+    };
+
+    const teamFontSize = getAutoFontSize(displayLabel.length, estimatedPlayerCount);
+    const teamLetterSpacing = getLetterSpacing(teamFontSize);
+    const flagSize = Math.max(12, Math.min(22, teamFontSize + 2));
+
     return (
         <div className={getRowClass()} style={{ animationDelay: `${index * 0.2}s` }}>
             <div className='row_accent'></div>
@@ -58,8 +84,8 @@ function Row({
                 {renderPositionChange()}
             </div>
             <div className='name_container' onClick={onClick} style={{ cursor: 'pointer' }}>
-                {alive && <span className='alive-dot' />}
-                <span className='team_name'>
+                <span className='team_name' style={{ fontSize: `${teamFontSize}px`, letterSpacing: teamLetterSpacing }}>
+                    {alive && <span className='alive-dot' />}
                     {showFlags && memberData && memberData.length > 0 ? (
                         memberData.map((member, idx) => (
                             <span key={`${member.name}-${idx}`} className='member_with_flag'>
@@ -67,6 +93,7 @@ function Row({
                                     src={`${process.env.PUBLIC_URL}/drapeaux-pays/${member.flag}.png`}
                                     alt="flag"
                                     className='flag_icon'
+                                    style={{ width: `${flagSize}px`, height: `${flagSize}px` }}
                                     onError={(e) => {
                                         e.target.onerror = null;
                                         e.target.src = `${process.env.PUBLIC_URL}/drapeaux-pays/GroupIdentity_GeoIdentity_global.png`;

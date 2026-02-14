@@ -1,4 +1,4 @@
-// import './LeaderboardPP_RVJ.css';
+import './LeaderboardPP_RVJ.css';
 import React, { useState, useEffect, useRef, useMemo } from "react"
 import { useLocation } from 'react-router-dom';
 import { enrichWithPreviousLeaderboard, fetchUnifiedLeaderboardData, parseExcludedSessionIds } from './leaderboardShared';
@@ -42,7 +42,7 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
                 display: 'inline-block',
                 marginLeft: '0px',
                 position: 'absolute',
-                right: '-32px',
+                right: '-36px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 pointerEvents: 'none'
@@ -106,6 +106,24 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
         };
     };
 
+    const displayLabel = showFlags && memberData && memberData.length > 0
+        ? memberData.map((member) => member.name).join(' - ')
+        : teamname;
+
+    const getAutoFontSize = (length) => {
+        if (length <= 18) return 24;
+        if (length <= 24) return 22;
+        if (length <= 30) return 20;
+        if (length <= 36) return 18;
+        if (length <= 44) return 16;
+        if (length <= 54) return 14;
+        if (length <= 64) return 12;
+        return 10;
+    };
+
+    const teamFontSize = getAutoFontSize(displayLabel.length);
+    const flagSize = Math.max(12, Math.min(22, teamFontSize + 2));
+
     return (
         <div className='row_container' style={{
             '--animation-order': order,
@@ -118,6 +136,7 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
             <div className='rank_container' style={{
                 fontSize: rank >= 1000 ? '24px' : rank >= 100 ? '24px' : '26px',
                 paddingLeft: rank >= 1000 ? '16px' : rank >= 100 ? '12px' : rank >= 10 ? '4px' : '0px',
+                paddingRight: '8px',
 
             }}>
                 {rank}
@@ -125,30 +144,32 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
             </div>
             <div className='name_container' style={{
                 cursor: 'pointer',
-                fontSize: teamname.length > 70 ? '7px' : teamname.length > 65 ? '8px' : teamname.length > 60 ? '9px' : teamname.length > 55 ? '10px' : teamname.length > 50 ? '11px' : teamname.length > 45 ? '12px' : teamname.length > 40 ? '13px' : teamname.length > 35 ? '14px' : teamname.length > 30 ? '15px' : teamname.length > 25 ? '17px' : teamname.length > 20 ? '19px' : teamname.length > 15 ? '21px' : '24px',
                 whiteSpace: 'nowrap',
 
             }} onClick={onClick}>
-                {alive && <span className='alive-dot' />}
-                {showFlags && memberData && memberData.length > 0 ? (
-                    memberData.map((member, idx) => (
-                        <span key={idx} className='member_with_flag'>
-                            <img
-                                src={`${process.env.PUBLIC_URL}/drapeaux-pays/${member.flag}.png`}
-                                alt="flag"
-                                className='flag_icon'
-                                onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = `${process.env.PUBLIC_URL}/drapeaux-pays/GroupIdentity_GeoIdentity_global.png`;
-                                }}
-                            />
-                            <span>{member.name}</span>
-                            {idx < memberData.length - 1 && <span className='separator'> - </span>}
-                        </span>
-                    ))
-                ) : (
-                    teamname
-                )}
+                <span className='team_name' style={{ fontSize: `${teamFontSize}px` }}>
+                    {alive && <span className='alive-dot' />}
+                    {showFlags && memberData && memberData.length > 0 ? (
+                        memberData.map((member, idx) => (
+                            <span key={idx} className='member_with_flag'>
+                                <img
+                                    src={`${process.env.PUBLIC_URL}/drapeaux-pays/${member.flag}.png`}
+                                    alt="flag"
+                                    className='flag_icon'
+                                    style={{ width: `${flagSize}px`, height: `${flagSize}px` }}
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = `${process.env.PUBLIC_URL}/drapeaux-pays/GroupIdentity_GeoIdentity_global.png`;
+                                    }}
+                                />
+                                <span>{member.name}</span>
+                                {idx < memberData.length - 1 && <span className='separator'> - </span>}
+                            </span>
+                        ))
+                    ) : (
+                        teamname
+                    )}
+                </span>
             </div>
             <div className='info_box'>{avg_place.toFixed(2)}</div>
             <div className='info_box'>{elims}</div>
@@ -210,6 +231,8 @@ function LeaderboardPP_RVJ() {
     const [cascadeFadeEnabled, setCascadeFadeEnabled] = useState(cascadeParam === 'true');
     const [previousLeaderboard, setPreviousLeaderboard] = useState(null);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const previousLeaderboardRef = useRef(null);
+    const isInitialLoadRef = useRef(true);
     const wasAllDeadRef = useRef(false);
 
     useEffect(() => {
@@ -253,16 +276,19 @@ function LeaderboardPP_RVJ() {
             setShowPositionIndicators(data.showPositionIndicators);
             setHasRefreshedOnce(true);
 
-            const merged = enrichWithPreviousLeaderboard(data.leaderboard, previousLeaderboard);
+            const previousData = previousLeaderboardRef.current;
+            const merged = enrichWithPreviousLeaderboard(data.leaderboard, previousData);
             setLeaderboard(merged.leaderboard);
             setTeamDetails(data.teamDetails);
             setPreviousLeaderboard(merged.leaderboard);
+            previousLeaderboardRef.current = merged.leaderboard;
 
-            if (typeof setIsInitialLoad === 'function' && isInitialLoad) {
+            if (isInitialLoadRef.current) {
                 setIsInitialLoad(false);
+                isInitialLoadRef.current = false;
             }
 
-            if (previousLeaderboard && merged.changedCount > 0) {
+            if (previousData && merged.changedCount > 0) {
                 setLastChangeTime(Date.now());
                 setAnimationEnabled(true);
                 setTimeout(() => { setAnimationEnabled(false); }, 2500);

@@ -1,5 +1,8 @@
 export function normalizeSessionId(value) {
-    return String(value ?? '').trim().toLowerCase();
+    return String(value ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
 }
 
 export function parseExcludedSessionIds(urlParams) {
@@ -254,7 +257,7 @@ export async function fetchUnifiedLeaderboardData({
 
     const rows = [];
     const teamDetails = {};
-    let hasMultipleGames = false;
+    const matchedExcludedSessionIds = new Set();
 
     allPagesData.forEach((pageData) => {
         const teams = toArray(pageData?.teams);
@@ -270,20 +273,30 @@ export async function fetchUnifiedLeaderboardData({
             const includedSessions = [];
             let excludedPointsFromV7 = 0;
 
-            sessionEntries.forEach(([sessionId, session]) => {
+            sessionEntries.forEach(([sessionId, session], sessionIndex) => {
                 const normalizedId = normalizeSessionId(sessionId);
-                const v7Points = v7PointsBySessionId[normalizedId];
+                const alignedV7Id = normalizeSessionId(v7Team?.sessions?.[sessionIndex]?.id);
+                const canonicalSessionId = alignedV7Id || normalizedId;
+
+                const v7Points = v7PointsBySessionId[canonicalSessionId]
+                    ?? v7PointsBySessionId[alignedV7Id]
+                    ?? v7PointsBySessionId[normalizedId];
+
                 const sessionPoints = Number.isFinite(Number(session?.points))
                     ? Number(session.points)
                     : (v7Points ?? null);
 
                 const normalizedSession = {
                     ...session,
-                    id: normalizedId,
+                    id: canonicalSessionId,
                     points: sessionPoints,
                 };
 
-                if (excludedSessionIds.has(normalizedId)) {
+                const matchedExcludedId = [canonicalSessionId, alignedV7Id, normalizedId]
+                    .find((candidateId) => candidateId && excludedSessionIds.has(candidateId));
+
+                if (matchedExcludedId) {
+                    matchedExcludedSessionIds.add(matchedExcludedId);
                     if (Number.isFinite(v7Points)) {
                         excludedPointsFromV7 += Number(v7Points);
                     }
@@ -297,8 +310,6 @@ export async function fetchUnifiedLeaderboardData({
             if (excludedSessionIds.size > 0 && games === 0) {
                 return;
             }
-
-            if (games > 1) hasMultipleGames = true;
 
             const elims = includedSessions.reduce((acc, session) => acc + toNumber(session?.kills, 0), 0);
             const wins = includedSessions.reduce((acc, session) => acc + (toNumber(session?.place, 0) === 1 ? 1 : 0), 0);
@@ -340,6 +351,7 @@ export async function fetchUnifiedLeaderboardData({
                 avg_place,
                 wins,
                 games,
+                originalGames: sessionEntries.length,
                 place: toNumber(teamData?.place, 0),
                 points,
                 alive: !!v7Team?.alive,
@@ -349,7 +361,17 @@ export async function fetchUnifiedLeaderboardData({
         });
     });
 
-    const sortedRows = sortLeaderboardRows(rows, forceRankByPoints || excludedSessionIds.size > 0);
+    const globalExcludedGamesCount = matchedExcludedSessionIds.size;
+    const rowsWithAdjustedGames = rows.map((team) => {
+        if (globalExcludedGamesCount <= 0) return team;
+        return {
+            ...team,
+            games: Math.max(0, toNumber(team.originalGames, team.games) - globalExcludedGamesCount),
+        };
+    });
+    const hasMultipleGames = rowsWithAdjustedGames.some((team) => team.games > 1);
+
+    const sortedRows = sortLeaderboardRows(rowsWithAdjustedGames, forceRankByPoints || excludedSessionIds.size > 0);
     const allDead = sortedRows.length > 0 && sortedRows.every((team) => !team.alive);
     const showPositionIndicators = indicatorsOnlyWhenAllDead ? allDead : true;
     const computedPositionChanges = buildGameSnapshots(sortedRows);
@@ -360,9 +382,10 @@ export async function fetchUnifiedLeaderboardData({
                 ? computedPositionChanges[team.teamname]
                 : null)
             : null;
+        const { originalGames, ...rest } = team;
 
         return {
-            ...team,
+            ...rest,
             positionChange,
         };
     });
