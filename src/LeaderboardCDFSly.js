@@ -1,6 +1,7 @@
 import './LeaderboardCDFSly.css';
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useLocation } from 'react-router-dom';
+import { enrichWithPreviousLeaderboard, fetchUnifiedLeaderboardData, parseExcludedSessionIds } from './leaderboardShared';
 
 const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive, showFlags, memberData }) {
     const renderPositionChange = () => {
@@ -186,6 +187,8 @@ function LeaderboardCDFSLY() {
     const leaderboard_id = urlParams.get('id');
     const cascadeParam = urlParams.get('cascade');
     const flagsParam = urlParams.get('flags');
+    const excludedSessionIds = useMemo(() => parseExcludedSessionIds(new URLSearchParams(location.search)), [location.search]);
+    const excludedSessionIdsKey = useMemo(() => Array.from(excludedSessionIds).sort().join(','), [excludedSessionIds]);
 
     const [leaderboard, setLeaderboard] = useState([]);
     const [apiPage, setApiPage] = useState(0);
@@ -235,6 +238,39 @@ function LeaderboardCDFSLY() {
 
     const loadLeaderboard = async () => {
         try {
+            const data = await fetchUnifiedLeaderboardData({
+                leaderboardId: leaderboard_id,
+                excludedSessionIds,
+                showFlags,
+                epicIdToCountry,
+                forceRankByPoints: true,
+                includeV7: true,
+                indicatorsOnlyWhenAllDead: true,
+            });
+
+            setTotalApiPages(data.totalPages);
+            setShowGamesColumn(data.hasMultipleGames);
+            setShowPositionIndicators(data.showPositionIndicators);
+            setHasRefreshedOnce(true);
+
+            const merged = enrichWithPreviousLeaderboard(data.leaderboard, previousLeaderboard);
+            setLeaderboard(merged.leaderboard);
+            setTeamDetails(data.teamDetails);
+            setPreviousLeaderboard(merged.leaderboard);
+
+            if (typeof setIsInitialLoad === 'function' && isInitialLoad) {
+                setIsInitialLoad(false);
+            }
+
+            if (previousLeaderboard && merged.changedCount > 0) {
+                setLastChangeTime(Date.now());
+                setAnimationEnabled(true);
+                setTimeout(() => { setAnimationEnabled(false); }, 2500);
+            } else {
+                setAnimationEnabled(false);
+            }
+
+            return;
             const firstResponse = await fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}?page=0`);
             const firstData = await firstResponse.json();
 
@@ -454,7 +490,7 @@ function LeaderboardCDFSLY() {
         const interval = setInterval(loadLeaderboard, 15000);
 
         return () => clearInterval(interval);
-    }, [leaderboard_id, epicIdToCountry, showFlags]);
+    }, [leaderboard_id, epicIdToCountry, showFlags, excludedSessionIdsKey]);
 
     useEffect(() => {
         function handleKeyDown(event) {

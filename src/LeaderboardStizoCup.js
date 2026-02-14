@@ -1,8 +1,9 @@
 import './LeaderboardStizoCup.css';
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation } from 'react-router-dom';
+import { enrichWithPreviousLeaderboard, fetchUnifiedLeaderboardData, parseExcludedSessionIds } from './leaderboardShared';
 
-function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, showFlags, memberData }) {
+function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive, showFlags, memberData }) {
     const renderPositionChange = () => {
         if (!showPositionIndicators) {
             return null;
@@ -136,6 +137,7 @@ function Row({ rank, teamname, points, elims, avg_place, wins, games, order, sho
                 fontSize: teamname.length > 70 ? '7px' : teamname.length > 65 ? '8px' : teamname.length > 60 ? '9px' : teamname.length > 55 ? '10px' : teamname.length > 50 ? '11px' : teamname.length > 45 ? '12px' : teamname.length > 40 ? '13px' : teamname.length > 35 ? '14px' : teamname.length > 30 ? '15px' : teamname.length > 25 ? '17px' : teamname.length > 20 ? '19px' : teamname.length > 15 ? '21px' : '24px',
                 whiteSpace: 'nowrap'
             }} onClick={onClick}>
+                {alive && <span className='alive-dot' />}
                 {showFlags && memberData && memberData.length > 0 ? (
                     memberData.map((member, idx) => (
                         <span key={idx} className='member_with_flag'>
@@ -171,6 +173,8 @@ function LeaderboardStizoCup() {
     const leaderboard_id = urlParams.get('id');
     const cascadeParam = urlParams.get('cascade');
     const flagsParam = urlParams.get('flags');
+    const excludedSessionIds = useMemo(() => parseExcludedSessionIds(new URLSearchParams(location.search)), [location.search]);
+    const excludedSessionIdsKey = useMemo(() => Array.from(excludedSessionIds).sort().join(','), [excludedSessionIds]);
 
     const [leaderboard, setLeaderboard] = useState(null);
     const [apiPage, setApiPage] = useState(0);
@@ -184,6 +188,7 @@ function LeaderboardStizoCup() {
     const [showGamesColumn, setShowGamesColumn] = useState(false);
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [teamDetails, setTeamDetails] = useState({});
+    const [previousLeaderboard, setPreviousLeaderboard] = useState(null);
     const [previousPositions, setPreviousPositions] = useState({});
     const [lastChangeTime, setLastChangeTime] = useState(Date.now());
     const [showPositionIndicators, setShowPositionIndicators] = useState(false);
@@ -229,6 +234,37 @@ function LeaderboardStizoCup() {
     useEffect(() => {
         const loadAllPages = async () => {
             try {
+                const data = await fetchUnifiedLeaderboardData({
+                    leaderboardId: leaderboard_id,
+                    excludedSessionIds,
+                    showFlags,
+                    epicIdToCountry,
+                    forceRankByPoints: true,
+                    includeV7: true,
+                    indicatorsOnlyWhenAllDead: true,
+                });
+
+                setTotalApiPages(data.totalPages);
+                setShowGamesColumn(data.hasMultipleGames);
+                setShowPositionIndicators(data.showPositionIndicators);
+                setHasRefreshedOnce(true);
+
+                const merged = enrichWithPreviousLeaderboard(data.leaderboard, previousLeaderboard);
+                setLeaderboard(merged.leaderboard);
+                setTeamDetails(data.teamDetails);
+                setPreviousLeaderboard(merged.leaderboard);
+
+                if (previousLeaderboard && merged.changedCount > 0) {
+                    setLastChangeTime(Date.now());
+                    setAnimationEnabled(true);
+                    setTimeout(() => {
+                        setAnimationEnabled(false);
+                    }, 2500);
+                } else {
+                    setAnimationEnabled(false);
+                }
+
+                return;
                 const firstResponse = await fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}?page=0`);
                 const firstData = await firstResponse.json();
                 
@@ -425,7 +461,7 @@ function LeaderboardStizoCup() {
         const interval = setInterval(loadAllPages, 15000);
 
         return () => clearInterval(interval);
-    }, [leaderboard_id, epicIdToCountry, showFlags]);
+    }, [leaderboard_id, epicIdToCountry, showFlags, excludedSessionIdsKey]);
 
     useEffect(() => {
         function handleKeyDown(event) {
@@ -573,6 +609,7 @@ function LeaderboardStizoCup() {
                                 hasPositionChanged={data.hasPositionChanged || false}
                                 cascadeFadeEnabled={cascadeFadeEnabled}
                                 cascadeIndex={index}
+                                alive={data.alive}
                                 showFlags={showFlags}
                                 memberData={data.memberData}
                             />

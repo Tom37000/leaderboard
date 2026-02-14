@@ -1,6 +1,7 @@
 import './LeaderboardCoupeDeFrance.css';
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useMemo } from "react"
 import { useLocation } from 'react-router-dom';
+import { enrichWithPreviousLeaderboard, fetchUnifiedLeaderboardData, parseExcludedSessionIds } from './leaderboardShared';
 
 const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive, showFlags, memberData }) {
     const renderPositionChange = () => {
@@ -184,6 +185,8 @@ function LeaderboardCoupeDeFrance() {
     const leaderboard_id = urlParams.get('id');
     const cascadeParam = urlParams.get('cascade');
     const flagsParam = urlParams.get('flags');
+    const excludedSessionIds = useMemo(() => parseExcludedSessionIds(new URLSearchParams(location.search)), [location.search]);
+    const excludedSessionIdsKey = useMemo(() => Array.from(excludedSessionIds).sort().join(','), [excludedSessionIds]);
 
     const [leaderboard, setLeaderboard] = useState([]);
     const [apiPage, setApiPage] = useState(0);
@@ -234,6 +237,41 @@ function LeaderboardCoupeDeFrance() {
 
     const loadLeaderboard = React.useCallback(async () => {
         try {
+            const data = await fetchUnifiedLeaderboardData({
+                leaderboardId: leaderboard_id,
+                excludedSessionIds,
+                showFlags,
+                epicIdToCountry,
+                forceRankByPoints: true,
+                includeV7: true,
+                indicatorsOnlyWhenAllDead: true,
+            });
+
+            setTotalApiPages(data.totalPages);
+            setShowGamesColumn(data.hasMultipleGames);
+            setShowPositionIndicators(data.showPositionIndicators);
+            setHasRefreshedOnce(true);
+            wasAllDeadRef.current = data.allDead;
+
+            const previousLeaderboard = previousLeaderboardRef.current;
+            const merged = enrichWithPreviousLeaderboard(data.leaderboard, previousLeaderboard);
+            setLeaderboard(merged.leaderboard);
+            setTeamDetails(data.teamDetails);
+            previousLeaderboardRef.current = merged.leaderboard;
+
+            if (isInitialLoad) {
+                setIsInitialLoad(false);
+            }
+
+            if (previousLeaderboard && merged.changedCount > 0) {
+                setLastChangeTime(Date.now());
+                setAnimationEnabled(true);
+                setTimeout(() => { setAnimationEnabled(false); }, 2500);
+            } else {
+                setAnimationEnabled(false);
+            }
+
+            return;
             const firstResponse = await fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}?page=0`);
             const firstData = await firstResponse.json();
 
@@ -433,7 +471,7 @@ function LeaderboardCoupeDeFrance() {
         } catch (error) {
             console.error('Error loading leaderboard data:', error);
         }
-    }, [leaderboard_id, isInitialLoad, epicIdToCountry, showFlags]);
+    }, [leaderboard_id, isInitialLoad, epicIdToCountry, showFlags, excludedSessionIdsKey]);
 
     useEffect(() => {
         const handleKeyPress = (event) => {
@@ -753,3 +791,4 @@ function LeaderboardCoupeDeFrance() {
 }
 
 export default LeaderboardCoupeDeFrance
+

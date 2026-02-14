@@ -1,10 +1,16 @@
 import './LeaderboardCDF.css';
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useLocation } from 'react-router-dom';
+import {
+    enrichWithPreviousLeaderboard,
+    fetchUnifiedLeaderboardData,
+    loadEpicIdToCountryMap,
+    parseExcludedSessionIds,
+} from './leaderboardShared';
 
 const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive, showFlags, memberData }) {
     const renderPositionChange = () => {
-        if (!showPositionIndicators || games < 2) {
+        if (!showPositionIndicators || alive || games < 2 || positionChange === null) {
             return null;
         }
 
@@ -181,6 +187,14 @@ function LeaderboardCDF() {
     const leaderboard_id = urlParams.get('id');
     const cascadeParam = urlParams.get('cascade');
     const flagsParam = urlParams.get('flags');
+    const excludedSessionIds = useMemo(
+        () => parseExcludedSessionIds(new URLSearchParams(location.search)),
+        [location.search]
+    );
+    const excludedSessionIdsKey = useMemo(
+        () => Array.from(excludedSessionIds).sort().join(','),
+        [excludedSessionIds]
+    );
 
     const [leaderboard, setLeaderboard] = useState([]);
     const [apiPage, setApiPage] = useState(0);
@@ -195,7 +209,6 @@ function LeaderboardCDF() {
     const [showGamesColumn, setShowGamesColumn] = useState(false);
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [teamDetails, setTeamDetails] = useState({});
-    const [previousPositions, setPreviousPositions] = useState({});
     const [lastChangeTime, setLastChangeTime] = useState(Date.now());
     const [showPositionIndicators, setShowPositionIndicators] = useState(false);
     const [hasRefreshedOnce, setHasRefreshedOnce] = useState(false);
@@ -206,229 +219,58 @@ function LeaderboardCDF() {
     const wasAllDeadRef = useRef(false);
 
     useEffect(() => {
-        if (showFlags) {
-            fetch(`${process.env.PUBLIC_URL}/id-epic-pays-database.txt`)
-                .then(response => response.text())
-                .then(data => {
-                    const mapping = {};
-                    const lines = data.split(/\r?\n/);
-                    lines.forEach((line, index) => {
-                        line = line.trim();
-                        if (!line) return;
+        let cancelled = false;
 
-                        const match = line.match(/^([a-f0-9]+):\s*(.+)$/);
-                        if (match) {
-                            const epicId = match[1].trim();
-                            const country = match[2].trim();
-                            mapping[epicId] = country;
-                        }
-                    });
-                    setEpicIdToCountry(mapping);
-                })
-                .catch(err => console.error('Error loading epic ID database:', err));
+        if (!showFlags) {
+            setEpicIdToCountry({});
+            return () => { };
         }
+
+        loadEpicIdToCountryMap(process.env.PUBLIC_URL)
+            .then((mapping) => {
+                if (!cancelled) setEpicIdToCountry(mapping);
+            })
+            .catch((err) => console.error('Error loading epic ID database:', err));
+
+        return () => {
+            cancelled = true;
+        };
     }, [showFlags]);
 
     const loadLeaderboard = async () => {
         try {
-            const firstResponse = await fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}?page=0`);
-            const firstData = await firstResponse.json();
-
-            let allLeaderboardData = [];
-            let allDetails = {};
-            let hasMultipleGames = false;
-
-            const totalPages = firstData.total_pages || 1;
-            setTotalApiPages(totalPages);
-
-            const promises = [];
-            for (let page = 0; page < totalPages; page++) {
-                promises.push(
-                    fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}?page=${page}`)
-                        .then(response => response.json())
-                );
-            }
-
-            const allPagesData = await Promise.all(promises);
-
-            let aliveByTeamname = {}; let v7PointsByTeamname = {};
-            try {
-                const queries = { queries: [{ range: { from: 0, to: 50000 }, flags: 1 }], flags: 1 };
-                const v7Response = await fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}/v7/query`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(queries),
-                });
-                const v7Data = await v7Response.json();
-                if (v7Data && v7Data.queries && v7Data.queries[0] && Array.isArray(v7Data.queries[0].entries)) {
-                    for (const entry of v7Data.queries[0].entries) {
-                        const membersArr = Object.values(entry.members);
-                        membersArr.sort((a, b) => a.id.localeCompare(b.id));
-                        const nameJoined = membersArr.map(m => m.name).join(' - ');
-                        aliveByTeamname[nameJoined] = ((entry.flags & 2) === 2);
-                        if (entry.stats && typeof entry.stats[1] !== 'undefined') {
-                            v7PointsByTeamname[nameJoined] = entry.stats[1];
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error('Error loading v7/query data:', e);
-            }
-
-            allPagesData.forEach(data => {
-                for (let team in data.teams) {
-                    const sessionKeys = Object.keys(data.teams[team].sessions).sort((a, b) => parseInt(a) - parseInt(b));
-                    const sessions = sessionKeys.map(key => data.teams[team].sessions[key]);
-                    const gamesCount = sessions.length;
-                    const members = Object.values(data.teams[team].members);
-                    members.sort((a, b) => a.id.localeCompare(b.id));
-                    const teamname = members.map(member => member.name).join(' - ');
-
-                    if (gamesCount > 1) {
-                        hasMultipleGames = true;
-                    }
-
-                    allDetails[teamname] = {
-                        members: members,
-                        sessions: sessions,
-                        teamData: data.teams[team]
-                    };
-
-                    const memberData = showFlags ? members.map(member => {
-                        const epicId = member.ingame_id || member.id;
-                        const countryFlag = epicIdToCountry[epicId] || 'GroupIdentity_GeoIdentity_global';
-                        return {
-                            name: member.name,
-                            flag: countryFlag
-                        };
-                    }) : [];
-
-                    allLeaderboardData.push({
-                        teamname: teamname,
-                        elims: sessions.map(session => session.kills).reduce((acc, curr) => acc + curr, 0),
-                        avg_place: sessions.reduce((acc, session) => acc + session.place, 0) / sessions.length,
-                        wins: sessions.map(session => session.place).reduce((acc, curr) => acc + (curr === 1 ? 1 : 0), 0),
-                        games: gamesCount,
-                        place: data.teams[team].place,
-                        points: data.teams[team].points,
-                        alive: !!aliveByTeamname[teamname],
-                        memberData: memberData
-                    });
-                }
-            });
-            allLeaderboardData.sort((a, b) => {
-                if (a.place !== b.place) {
-                    return a.place - b.place;
-                }
-                return b.points - a.points;
-            });
-            const snapshotsKey = `cdf_ranks_snapshots_${leaderboard_id}`;
-            const rankSnapshots = JSON.parse(localStorage.getItem(snapshotsKey) || '{}');
-            const newIndicators = {};
-            let hasNewChanges = false;
-            const changedTeams = new Set();
-            const prevRunIndicatorsKey = `cdf_prev_run_indicators_${leaderboard_id}`;
-            const prevRunIndicators = JSON.parse(localStorage.getItem(prevRunIndicatorsKey) || '{}');
-
-            allLeaderboardData.forEach(team => {
-                const gameCount = team.games;
-                if (!rankSnapshots[gameCount]) {
-                    rankSnapshots[gameCount] = {};
-                }
-                rankSnapshots[gameCount][team.teamname] = team.place;
-                if (gameCount > 1) {
-                    const prevGameCount = gameCount - 1;
-                    if (rankSnapshots[prevGameCount] && rankSnapshots[prevGameCount][team.teamname]) {
-                        const prevRank = rankSnapshots[prevGameCount][team.teamname];
-                        const change = prevRank - team.place;
-
-                        newIndicators[team.teamname] = change;
-                        if (newIndicators[team.teamname] !== (prevRunIndicators[team.teamname] || 0)) {
-                            changedTeams.add(team.teamname);
-                            hasNewChanges = true;
-                        }
-                    }
-                }
+            const data = await fetchUnifiedLeaderboardData({
+                leaderboardId: leaderboard_id,
+                excludedSessionIds,
+                showFlags,
+                epicIdToCountry,
+                forceRankByPoints: true,
+                includeV7: true,
+                indicatorsOnlyWhenAllDead: true,
             });
 
-            localStorage.setItem(snapshotsKey, JSON.stringify(rankSnapshots));
-            localStorage.setItem(prevRunIndicatorsKey, JSON.stringify(newIndicators));
-
-            let updatedLeaderboardData;
-            if (previousLeaderboard) {
-                const previousTeamsMap = new Map(previousLeaderboard.map(team => [team.teamname, team]));
-                updatedLeaderboardData = allLeaderboardData.map(team => {
-                    const existingTeam = previousTeamsMap.get(team.teamname);
-
-                    let dataChanged = false;
-                    if (existingTeam) {
-                        dataChanged = existingTeam.points !== team.points ||
-                            existingTeam.elims !== team.elims ||
-                            existingTeam.wins !== team.wins ||
-                            existingTeam.games !== team.games ||
-                            Math.abs(existingTeam.avg_place - team.avg_place) > 0.01;
-                    }
-
-                    const indicatorVal = newIndicators[team.teamname] || 0;
-                    const prevIndicatorVal = prevRunIndicators[team.teamname] || 0;
-                    const positionChanged = indicatorVal !== prevIndicatorVal;
-
-                    return {
-                        ...team,
-                        positionChange: indicatorVal,
-                        hasPositionChanged: positionChanged,
-                        teamId: team.teamname,
-                        _isUpdated: dataChanged || positionChanged
-                    };
-                });
-            } else {
-                updatedLeaderboardData = allLeaderboardData.map(team => {
-                    return {
-                        ...team,
-                        positionChange: newIndicators[team.teamname] || 0,
-                        hasPositionChanged: (newIndicators[team.teamname] || 0) !== 0,
-                        teamId: team.teamname,
-                        _isUpdated: true
-                    };
-                });
-            }
-
-            const allDead = updatedLeaderboardData.length > 0 && updatedLeaderboardData.every(team => !team.alive);
-            const shouldShowIndicators = allDead;
-
-            if (!shouldShowIndicators) {
-                updatedLeaderboardData.forEach(team => {
-                    team.positionChange = 0;
-                    team.hasPositionChanged = false;
-                });
-            }
-
-            setShowPositionIndicators(shouldShowIndicators);
+            setTotalApiPages(data.totalPages);
+            setShowGamesColumn(data.hasMultipleGames);
+            setShowPositionIndicators(data.showPositionIndicators);
             setHasRefreshedOnce(true);
-            wasAllDeadRef.current = allDead;
+            wasAllDeadRef.current = data.allDead;
 
-            if (changedTeams.size > 0) {
-                const now = Date.now();
-                setLastChangeTime(now);
-                const lastChangeTimeKey = `cdf_last_change_time_${leaderboard_id}`;
-                localStorage.setItem(lastChangeTimeKey, now.toString());
+            const merged = enrichWithPreviousLeaderboard(data.leaderboard, previousLeaderboard);
+            setLeaderboard(merged.leaderboard);
+            setTeamDetails(data.teamDetails);
+            setPreviousLeaderboard(merged.leaderboard);
+
+            if (isInitialLoad) {
+                setIsInitialLoad(false);
+            }
+
+            if (previousLeaderboard && merged.changedCount > 0) {
+                setLastChangeTime(Date.now());
                 setAnimationEnabled(true);
                 setTimeout(() => { setAnimationEnabled(false); }, 2500);
             } else {
                 setAnimationEnabled(false);
             }
-
-            setShowGamesColumn(hasMultipleGames);
-            if (isInitialLoad) {
-                setLeaderboard(updatedLeaderboardData);
-                setIsInitialLoad(false);
-            } else {
-                setLeaderboard(updatedLeaderboardData);
-            }
-
-            setTeamDetails(allDetails);
-
-            setPreviousLeaderboard(updatedLeaderboardData);
         } catch (error) {
             console.error('Error loading leaderboard data:', error);
         }
@@ -452,7 +294,7 @@ function LeaderboardCDF() {
         const interval = setInterval(loadLeaderboard, 15000);
 
         return () => clearInterval(interval);
-    }, [leaderboard_id, epicIdToCountry, showFlags]);
+    }, [leaderboard_id, epicIdToCountry, showFlags, excludedSessionIdsKey]);
 
     useEffect(() => {
         function handleKeyDown(event) {

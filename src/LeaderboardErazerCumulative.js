@@ -1,43 +1,118 @@
 import './LeaderboardErazerCumulative.css';
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from 'react-router-dom';
 import erazerLogo from './erazer-logo1.png';
+import {
+    computePositionChangesFromSessions,
+    fetchUnifiedLeaderboardData,
+    loadEpicIdToCountryMap,
+    parseExcludedSessionIds,
+} from './leaderboardShared';
 
-const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, cascadeFadeEnabled, cascadeIndex }) {
+const indicatorBaseStyle = {
+    marginLeft: '8px',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    color: '#fff',
+};
 
-    const getAnimationStyle = () => {
-        return {};
-    };
-
-    const getRowClasses = () => {
-        let classes = 'row_container';
-        if (rank <= 25) {
-            classes += ' top-25';
+const Row = React.memo(function Row({
+    rank,
+    teamname,
+    points,
+    elims,
+    avg_place,
+    wins,
+    games,
+    order,
+    showGamesColumn,
+    onClick,
+    cascadeFadeEnabled,
+    cascadeIndex,
+    showPositionIndicators,
+    positionChange,
+    alive,
+    showFlags,
+    memberData,
+}) {
+    const renderPositionChange = () => {
+        if (!showPositionIndicators || alive || games < 2 || positionChange === null || positionChange === 0) {
+            return null;
         }
-        return classes;
+
+        if (positionChange > 0) {
+            return <span style={{ ...indicatorBaseStyle, backgroundColor: '#4CAF50' }}>+{positionChange}</span>;
+        }
+        return <span style={{ ...indicatorBaseStyle, backgroundColor: '#f44336' }}>{positionChange}</span>;
     };
 
     return (
-        <div className={getRowClasses()} style={{ 
-            '--animation-order': order,
-            opacity: cascadeFadeEnabled ? 0 : 1,
-            animation: cascadeFadeEnabled ? 'fadeIn 0.8s forwards' : 'none',
-            animationDelay: cascadeFadeEnabled ? `${cascadeIndex * 0.1}s` : '0s',
-            ...getAnimationStyle()
-        }}>
-            <div className='rank_container' style={{
-                fontSize: rank >= 1000 ? '24px' : rank >= 100 ? '24px' : '26px',
-                paddingLeft: rank >= 1000 ? '16px' : rank >= 100 ? '12px' : rank >= 10 ? '4px' : '0px'
-            }}>
+        <div
+            className={`row_container ${rank <= 25 ? 'top-25' : ''}`}
+            style={{
+                '--animation-order': order,
+                opacity: cascadeFadeEnabled ? 0 : 1,
+                animation: cascadeFadeEnabled ? 'fadeIn 0.8s forwards' : 'none',
+                animationDelay: cascadeFadeEnabled ? `${cascadeIndex * 0.1}s` : '0s',
+            }}
+        >
+            <div
+                className='rank_container'
+                style={{
+                    fontSize: rank >= 1000 ? '24px' : rank >= 100 ? '24px' : '26px',
+                    paddingLeft: rank >= 1000 ? '16px' : rank >= 100 ? '12px' : rank >= 10 ? '4px' : '0px',
+                }}
+            >
                 {rank}
+                {renderPositionChange()}
             </div>
-            <div className='name_container' style={{ 
-                cursor: 'pointer',
-                fontSize: teamname.length > 25 ? '16px' : teamname.length > 20 ? '18px' : teamname.length > 15 ? '20px' : teamname.length > 10 ? '22px' : '24px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-            }} onClick={onClick}>{teamname}</div>
+            <div
+                className='name_container'
+                style={{
+                    cursor: 'pointer',
+                    fontSize: teamname.length > 25 ? '16px' : teamname.length > 20 ? '18px' : teamname.length > 15 ? '20px' : teamname.length > 10 ? '22px' : '24px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                }}
+                onClick={onClick}
+            >
+                {alive && (
+                    <span
+                        style={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            backgroundColor: '#f15c86',
+                            boxShadow: '0 0 8px #f15c86',
+                            flexShrink: 0,
+                        }}
+                    />
+                )}
+                {showFlags && memberData && memberData.length > 0
+                    ? memberData.map((member, idx) => (
+                        <span key={`${member.name}-${idx}`} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                            <img
+                                src={`${process.env.PUBLIC_URL}/drapeaux-pays/${member.flag}.png`}
+                                alt="flag"
+                                style={{ width: '16px', height: '16px', borderRadius: '50%', objectFit: 'cover', marginRight: '4px' }}
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = `${process.env.PUBLIC_URL}/drapeaux-pays/GroupIdentity_GeoIdentity_global.png`;
+                                }}
+                            />
+                            <span>{member.name}</span>
+                            {idx < memberData.length - 1 && <span>&nbsp;-&nbsp;</span>}
+                        </span>
+                    ))
+                    : teamname}
+            </div>
             <div className='info_box'>{avg_place.toFixed(2)}</div>
             <div className='info_box'>{elims}</div>
             <div className='info_box'>{wins}</div>
@@ -45,143 +120,222 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
             {showGamesColumn && <div className='info_box'>{games}</div>}
         </div>
     );
-}, (prevProps, nextProps) => {
-    return (
-        prevProps.rank === nextProps.rank &&
-        prevProps.teamname === nextProps.teamname &&
-        prevProps.points === nextProps.points &&
-        prevProps.elims === nextProps.elims &&
-        prevProps.avg_place === nextProps.avg_place &&
-        prevProps.wins === nextProps.wins &&
-        prevProps.games === nextProps.games &&
-        prevProps.showGamesColumn === nextProps.showGamesColumn &&
-        prevProps.cascadeFadeEnabled === nextProps.cascadeFadeEnabled
-    );
 });
 
 function LeaderboardErazerCumulative() {
     const location = useLocation();
-    const urlParams = new URLSearchParams(location.search);
-     const urlIds = urlParams.get('ids')?.split(',').filter(id => id.trim()) || [];
-     
-     const leaderboard_ids = urlIds;
-    const cascadeParam = urlParams.get('cascade');
+    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
-    const [leaderboard, setLeaderboard] = useState(null);
+    const leaderboardIds = useMemo(
+        () => (searchParams.get('ids') || '').split(',').map((id) => id.trim()).filter(Boolean),
+        [searchParams]
+    );
+    const cascadeParam = searchParams.get('cascade');
+    const flagsParam = searchParams.get('flags');
+    const excludedSessionIds = useMemo(
+        () => parseExcludedSessionIds(new URLSearchParams(location.search)),
+        [location.search]
+    );
+
+    const [leaderboard, setLeaderboard] = useState([]);
     const [error, setError] = useState(null);
-    const [apiPage, setApiPage] = useState(0); 
-    const [localPage, setLocalPage] = useState(0); 
-    const [totalApiPages, setTotalApiPages] = useState(1);
-    const [searchQuery, setSearchQuery] = useState(""); 
-    const [showSearch, setShowSearch] = useState(true); 
-
+    const [localPage, setLocalPage] = useState(0);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showSearch, setShowSearch] = useState(true);
+    const [showFlags, setShowFlags] = useState(flagsParam === 'true');
+    const [epicIdToCountry, setEpicIdToCountry] = useState({});
     const [showGamesColumn, setShowGamesColumn] = useState(false);
-
+    const [showPositionIndicators, setShowPositionIndicators] = useState(false);
+    const [selectedTeam, setSelectedTeam] = useState(null);
+    const [teamDetails, setTeamDetails] = useState({});
     const [cascadeFadeEnabled, setCascadeFadeEnabled] = useState(cascadeParam === 'true');
     const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
-        const handleKeyPress = (event) => {
-            if (event.key === 'F8') {
-                setCascadeFadeEnabled(prev => !prev);
-            } else if (event.key === 'F2') {
-                exportToCSV();
-            }
-        };
+        setShowFlags(flagsParam === 'true');
+        setCascadeFadeEnabled(cascadeParam === 'true');
+    }, [flagsParam, cascadeParam]);
 
-        window.addEventListener('keydown', handleKeyPress);
-        return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [leaderboard]);
+    useEffect(() => {
+        if (!showFlags) {
+            setEpicIdToCountry({});
+            return;
+        }
 
-    const exportToCSV = async () => {
-        if (!leaderboard || isExporting) return;
-        
+        loadEpicIdToCountryMap(process.env.PUBLIC_URL)
+            .then((mapping) => setEpicIdToCountry(mapping))
+            .catch((err) => {
+                console.error('Error loading epic ID database:', err);
+                setEpicIdToCountry({});
+            });
+    }, [showFlags]);
+
+    const loadAllPages = useCallback(async () => {
+        if (leaderboardIds.length === 0) {
+            setLeaderboard([]);
+            setTeamDetails({});
+            setError('Aucun leaderboard_id fourni via ?ids=...');
+            return;
+        }
+
+        setError(null);
+
+        try {
+            const datasets = await Promise.all(
+                leaderboardIds.map((leaderboardId) =>
+                    fetchUnifiedLeaderboardData({
+                        leaderboardId,
+                        excludedSessionIds,
+                        showFlags,
+                        epicIdToCountry,
+                        forceRankByPoints: true,
+                        includeV7: true,
+                        indicatorsOnlyWhenAllDead: true,
+                    })
+                )
+            );
+
+            const aggregate = new Map();
+            let hasMultipleGames = false;
+
+            datasets.forEach((dataset, idx) => {
+                const leaderboardId = leaderboardIds[idx];
+
+                dataset.leaderboard.forEach((team) => {
+                    if (team.place <= 25) return;
+
+                    const sourceDetails = dataset.teamDetails[team.teamname];
+                    if (!sourceDetails) return;
+
+                    hasMultipleGames = hasMultipleGames || team.games > 1;
+
+                    if (!aggregate.has(team.teamname)) {
+                        aggregate.set(team.teamname, {
+                            teamname: team.teamname,
+                            points: 0,
+                            elims: 0,
+                            wins: 0,
+                            games: 0,
+                            weightedPlaceSum: 0,
+                            alive: false,
+                            memberData: [],
+                            members: [],
+                            sessions: [],
+                            sessionsForIndicators: [],
+                            sources: [],
+                        });
+                    }
+
+                    const entry = aggregate.get(team.teamname);
+                    entry.points += Number(team.points || 0);
+                    entry.elims += Number(team.elims || 0);
+                    entry.wins += Number(team.wins || 0);
+                    entry.games += Number(team.games || 0);
+                    entry.weightedPlaceSum += Number(team.avg_place || 0) * Number(team.games || 0);
+                    entry.alive = entry.alive || !!team.alive;
+
+                    if (showFlags && team.memberData && team.memberData.length > 0) {
+                        entry.memberData = team.memberData;
+                    }
+
+                    if (entry.members.length === 0) {
+                        entry.members = Array.isArray(sourceDetails.members) ? sourceDetails.members : [];
+                    }
+
+                    entry.sessions.push(...(Array.isArray(sourceDetails.sessions) ? sourceDetails.sessions : []));
+                    entry.sessionsForIndicators.push(...(Array.isArray(team.sessionsForIndicators) ? team.sessionsForIndicators : []));
+                    entry.sources.push({ leaderboardId, place: team.place, points: team.points, games: team.games });
+                });
+            });
+
+            const rows = Array.from(aggregate.values()).map((entry) => ({
+                teamname: entry.teamname,
+                points: entry.points,
+                elims: entry.elims,
+                wins: entry.wins,
+                games: entry.games,
+                avg_place: entry.games > 0 ? entry.weightedPlaceSum / entry.games : 0,
+                alive: entry.alive,
+                memberData: showFlags ? entry.memberData : [],
+                sessionsForIndicators: entry.sessionsForIndicators,
+            }));
+
+            rows.sort((a, b) => {
+                if (b.points !== a.points) return b.points - a.points;
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                const avgElimsA = a.games > 0 ? a.elims / a.games : 0;
+                const avgElimsB = b.games > 0 ? b.elims / b.games : 0;
+                if (avgElimsB !== avgElimsA) return avgElimsB - avgElimsA;
+                return a.avg_place - b.avg_place;
+            });
+
+            rows.forEach((team, index) => {
+                team.place = index + 1;
+            });
+
+            const allDead = rows.length > 0 && rows.every((team) => !team.alive);
+            const computedChanges = computePositionChangesFromSessions(rows);
+
+            const finalRows = rows.map((team) => ({
+                ...team,
+                positionChange: allDead
+                    ? (Object.prototype.hasOwnProperty.call(computedChanges, team.teamname)
+                        ? computedChanges[team.teamname]
+                        : null)
+                    : null,
+                teamId: team.teamname,
+            }));
+
+            const details = {};
+            aggregate.forEach((entry, teamname) => {
+                const row = finalRows.find((team) => team.teamname === teamname);
+                details[teamname] = {
+                    members: entry.members,
+                    sessions: entry.sessions,
+                    sources: entry.sources,
+                    teamData: {
+                        place: row?.place || 0,
+                        points: row?.points || 0,
+                    },
+                };
+            });
+
+            setShowGamesColumn(hasMultipleGames);
+            setShowPositionIndicators(allDead);
+            setTeamDetails(details);
+            setLeaderboard(finalRows);
+        } catch (err) {
+            console.error('Error loading leaderboard data:', err);
+            setError(`Erreur lors du chargement des donnees: ${err.message}`);
+        }
+    }, [leaderboardIds, excludedSessionIds, showFlags, epicIdToCountry]);
+
+    useEffect(() => {
+        loadAllPages();
+        const interval = setInterval(loadAllPages, 60000);
+        return () => clearInterval(interval);
+    }, [loadAllPages]);
+
+    const exportToCSV = useCallback(async () => {
+        if (!leaderboard || leaderboard.length === 0 || isExporting) return;
+
         setIsExporting(true);
-        
         try {
             const top50 = leaderboard.slice(0, 50);
-            const csvData = [];
-            
-            csvData.push(['Rank', 'Team Name', 'Points', 'Elims', 'Wins', 'Games', 'Avg Place', 'WLS Names', 'User IDs', 'Discord IDs']);
-            
-            for (const team of top50) {
-                try {
-                    const teamNames = team.teamname.split(' - ');
-                    const wlsData = [];
-                    
-                    for (const name of teamNames) {
-                        try {
-                            const response = await fetch(`https://api.wls.gg/users/name/${encodeURIComponent(name)}`);
-                            if (response.ok) {
-                                const userData = await response.json();
-                                
-                                let discordId = 'N/A';
-                                if (userData.connections) {
-                                    const discordConnection = Object.values(userData.connections).find(conn => conn.provider === 'discord');
-                                    if (discordConnection) {
-                                        discordId = discordConnection.id;
-                                    }
-                                }
-                                
-                                wlsData.push({
-                                    name: name,
-                                    id: userData.id || 'N/A',
-                                    discord_id: discordId
-                                });
-                            } else {
-                                wlsData.push({
-                                    name: name,
-                                    id: 'N/A',
-                                    discord_id: 'N/A'
-                                });
-                            }
-                        } catch (error) {
-                            console.warn(`Erreur pour ${name}:`, error);
-                            wlsData.push({
-                                name: name,
-                                id: 'N/A',
-                                discord_id: 'N/A'
-                            });
-                        }
-                        
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                    
-                    const wlsNames = wlsData.map(d => d.name).join('; ');
-                    const userIds = wlsData.map(d => d.id).join('; ');
-                    const discordIds = wlsData.map(d => d.discord_id).join('; ');
-                    
-                    csvData.push([
-                        team.place,
-                        team.teamname,
-                        team.points,
-                        team.elims,
-                        team.wins,
-                        team.games,
-                        team.avg_place.toFixed(2),
-                        wlsNames,
-                        userIds,
-                        discordIds
-                    ]);
-                } catch (error) {
-                    console.error(`Erreur pour l'équipe ${team.teamname}:`, error);
-                    csvData.push([
-                        team.place,
-                        team.teamname,
-                        team.points,
-                        team.elims,
-                        team.wins,
-                        team.games,
-                        team.avg_place.toFixed(2),
-                        'Erreur',
-                        'Erreur',
-                        'Erreur'
-                    ]);
-                }
-            }
-            const csvContent = csvData.map(row => 
-                row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
-            ).join('\n');
+            const csvHeader = ['Rank', 'Team Name', 'Points', 'Elims', 'Wins', 'Games', 'Avg Place'];
+            const csvRows = top50.map((team) => [
+                team.place,
+                team.teamname,
+                team.points,
+                team.elims,
+                team.wins,
+                team.games,
+                team.avg_place.toFixed(2),
+            ]);
+            const csvContent = [csvHeader, ...csvRows]
+                .map((row) => row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(','))
+                .join('\n');
+
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
@@ -191,291 +345,69 @@ function LeaderboardErazerCumulative() {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
-        } catch (error) {
-            console.error('Erreur lors de l\'export CSV:', error);
-            alert('Erreur lors de l\'export CSV. Vérifiez la console pour plus de détails.');
+        } catch (err) {
+            console.error('Erreur lors de l\'export CSV:', err);
+            alert('Erreur lors de l\'export CSV. Verifiez la console pour plus de details.');
         } finally {
             setIsExporting(false);
         }
-    };
-
-    const getCachedData = (cacheKey) => {
-        try {
-            const cached = localStorage.getItem(cacheKey);
-            if (cached) {
-                const { data, timestamp } = JSON.parse(cached);
-                const now = Date.now();
-                if (now - timestamp < 45000) {
-                    return data;
-                }
-            }
-        } catch (error) {
-            console.warn('Erreur lors de la lecture du cache:', error);
-        }
-        return null;
-    };
-
-    const setCachedData = (cacheKey, data) => {
-        try {
-            const cacheEntry = {
-                data,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(cacheKey, JSON.stringify(cacheEntry));
-        } catch (error) {
-            console.warn('Erreur lors de la sauvegarde du cache:', error);
-        }
-    };
+    }, [leaderboard, isExporting]);
 
     useEffect(() => {
-        const loadAllPages = async () => {
-            if (leaderboard_ids.length === 0) {
-                console.error('Aucun leaderboard_id fourni');
-                return;
-            }
-
-            console.log('Chargement des leaderboards avec les IDs:', leaderboard_ids);
-            setError(null); 
-
-            const currentIdsString = leaderboard_ids.join('_');
-            
-            const cacheKey = `leaderboard_data_${currentIdsString}`;
-            const cachedResult = getCachedData(cacheKey);
-            
-            if (cachedResult) {
-                console.log('Utilisation des données en cache');
-                setLeaderboard(cachedResult.leaderboardData);
-                setShowGamesColumn(cachedResult.hasMultipleGames);
-                return;
-            }
-
-            try {
-                let allCumulativeData = [];
-                let allDetails = {};
-                let hasMultipleGames = false;
-                
-                for (const leaderboard_id of leaderboard_ids) {
-                    console.log(`Chargement du leaderboard: ${leaderboard_id}`);
-                    const firstResponse = await fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}?page=0`);
-                    if (!firstResponse.ok) {
-                        console.error(`Erreur HTTP pour le leaderboard ${leaderboard_id}: ${firstResponse.status}`);
-                        throw new Error(`HTTP error! status: ${firstResponse.status} for leaderboard ${leaderboard_id}`);
-                    }
-                    const firstData = await firstResponse.json();
-                    
-                    let leaderboardData = [];
-                    
-                    const totalPages = firstData.total_pages || 1;
-                    
-                    const promises = [];
-                    for (let page = 0; page < totalPages; page++) {
-                        promises.push(
-                            fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}?page=${page}`)
-                                .then(response => {
-                                    if (!response.ok) {
-                                        throw new Error(`HTTP error! status: ${response.status}`);
-                                    }
-                                    return response.json();
-                                })
-                        );
-                    }
-                    
-                    const allPagesData = await Promise.all(promises);
-                    
-                    allPagesData.forEach(data => {
-                        for (let team in data.teams) {
-                            const sessionKeys = Object.keys(data.teams[team].sessions).sort((a, b) => parseInt(a) - parseInt(b));
-                            const sessions = sessionKeys.map(key => data.teams[team].sessions[key]);
-                            const gamesCount = sessions.length;
-                            const members = Object.values(data.teams[team].members);
-                            members.sort((a, b) => a.id.localeCompare(b.id));
-                            const teamname = members.map(member => member.name).join(' - ');
-                            
-                            if (gamesCount > 1) {
-                                hasMultipleGames = true;
-                            }
-
-                            allDetails[teamname] = {
-                                members: members,
-                                sessions: sessions,
-                                teamData: data.teams[team]
-                            };
-                            
-                            leaderboardData.push({
-                                teamname: teamname,
-                                elims: sessions.map(session => session.kills).reduce((acc, curr) => acc + curr, 0),
-                                avg_place: sessions.reduce((acc, session) => acc + session.place, 0) / sessions.length,
-                                wins: sessions.map(session => session.place).reduce((acc, curr) => acc + (curr === 1 ? 1 : 0), 0),
-                                games: gamesCount,
-                                place: data.teams[team].place,
-                                points: data.teams[team].points,
-                                leaderboard_id: leaderboard_id
-                            });
-                        }
-                    });
-                    
-
-                    leaderboardData.sort((a, b) => {
-                        if (a.place !== b.place) {
-                            return a.place - b.place;
-                        }
-                        return b.points - a.points;
-                    });
-                    
-                    const filteredData = leaderboardData.filter(team => team.place > 25);
-                    
-                    allCumulativeData = allCumulativeData.concat(filteredData);
-                }
-
-                const teamMap = new Map();
-                
-                allCumulativeData.forEach(team => {
-                    if (teamMap.has(team.teamname)) {
-                        const existing = teamMap.get(team.teamname);
-                        existing.points += team.points;
-                        existing.elims += team.elims;
-                        existing.wins += team.wins;
-                        existing.games += team.games;
-                        const totalGames = existing.games;
-                        existing.avg_place = ((existing.avg_place * (totalGames - team.games)) + (team.avg_place * team.games)) / totalGames;
-                    } else {
-                        teamMap.set(team.teamname, { ...team });
-                    }
-                });
-                
-                const finalLeaderboardData = Array.from(teamMap.values());
-                finalLeaderboardData.sort((a, b) => {
-                    if (b.points !== a.points) {
-                        return b.points - a.points;
-                    }
-                    if (b.wins !== a.wins) {
-                        return b.wins - a.wins;
-                    }
-                    const avgElimsA = a.games > 0 ? a.elims / a.games : 0;
-                    const avgElimsB = b.games > 0 ? b.elims / b.games : 0;
-                    if (avgElimsB !== avgElimsA) {
-                        return avgElimsB - avgElimsA;
-                    }
-                    return a.avg_place - b.avg_place;
-                });
-                finalLeaderboardData.forEach((team, index) => {
-                    team.place = index + 1;
-                });
-                
-                const updatedLeaderboardData = finalLeaderboardData.map(team => {
-                    return {
-                        ...team,
-                        teamId: team.teamname
-                    };
-                });
-                
-                setShowGamesColumn(hasMultipleGames);
-                setLeaderboard(updatedLeaderboardData);
-                
-                setCachedData(cacheKey, {
-                    leaderboardData: updatedLeaderboardData,
-                    hasMultipleGames
-                });
-            } catch (error) {
-                console.error('Error loading leaderboard data:', error);
-                setError(`Erreur lors du chargement des données: ${error.message}`);
+        const handleKeyDown = (event) => {
+            if (event.key === 'F1') {
+                event.preventDefault();
+                setShowSearch((prev) => !prev);
+            } else if (event.key === 'F2') {
+                event.preventDefault();
+                exportToCSV();
+            } else if (event.key === 'F8') {
+                event.preventDefault();
+                setCascadeFadeEnabled((prev) => !prev);
             }
         };
-        
-        loadAllPages();
-        
-        const interval = setInterval(loadAllPages, 60000);
-        
-        return () => clearInterval(interval);
-    }, [leaderboard_ids]);
-
-    useEffect(() => {
-        function handleKeyDown(event) {
-            if (event.key === 'F1') { 
-                event.preventDefault();
-                setShowSearch(prev => !prev); 
-            }
-        }
 
         window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, []);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [exportToCSV]);
 
     useEffect(() => {
         setLocalPage(0);
     }, [searchQuery]);
 
+    const filteredLeaderboard = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+        if (!query) return leaderboard;
 
-
-    function nextPageFromPoints() {
-        if (!showGamesColumn) {
-            const filteredLeaderboard = leaderboard
-                ? leaderboard.filter(team => {
-                    if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
-                        return true;
-                    }
-                    if (!isNaN(searchQuery) && searchQuery.trim() !== '') {
-                        const searchPosition = parseInt(searchQuery.trim());
-                        if (team.place === searchPosition) {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                })
-                : [];
-            const maxPages = Math.ceil(filteredLeaderboard.length / 10) - 1;
-            
-            if (localPage < maxPages) {
-                setLocalPage(localPage + 1);
+        return leaderboard.filter((team) => {
+            if (team.teamname.toLowerCase().includes(query)) return true;
+            if (!Number.isNaN(Number(query)) && Number.isInteger(Number(query))) {
+                return team.place === Number(query);
             }
-        }
-    }
+            return false;
+        });
+    }, [leaderboard, searchQuery]);
 
-    function nextPageFromGames() {
-        if (showGamesColumn) {
-            const filteredLeaderboard = leaderboard
-                ? leaderboard.filter(team => {
-                    if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
-                        return true;
-                    }
-                    if (!isNaN(searchQuery) && searchQuery.trim() !== '') {
-                        const searchPosition = parseInt(searchQuery.trim());
-                        if (team.place === searchPosition) {
-                            return true;
-                        }
-                    }
+    const startIndex = localPage * 10;
+    const displayedLeaderboard = filteredLeaderboard.slice(startIndex, startIndex + 10);
 
-                    return false;
-                })
-                : [];
-            const maxPages = Math.ceil(filteredLeaderboard.length / 10) - 1;
-            
-            if (localPage < maxPages) {
-                setLocalPage(localPage + 1);
-            }
-        }
-    }
+    const previousPage = () => {
+        if (localPage > 0) setLocalPage((prev) => prev - 1);
+    };
 
-    function previousPage() {
-        if (localPage > 0) {
-            setLocalPage(localPage - 1);
-        }
-    }
+    const nextPage = () => {
+        const maxPages = Math.max(0, Math.ceil(filteredLeaderboard.length / 10) - 1);
+        if (localPage < maxPages) setLocalPage((prev) => prev + 1);
+    };
+
+    const closeModal = () => setSelectedTeam(null);
 
     if (error) {
         return (
             <div className='erazer_cup_cumulative'>
                 <img src={erazerLogo} alt="Erazer Logo" className="erazer_logo" />
-                <div style={{color: 'red', textAlign: 'center', marginTop: '50px', fontSize: '18px'}}>
+                <div style={{ color: 'red', textAlign: 'center', marginTop: '50px', fontSize: '18px' }}>
                     {error}
-                    <br />
-                    <small style={{color: '#ccc', marginTop: '10px', display: 'block'}}>
-                        Vérifiez que les IDs des leaderboards sont corrects dans l'URL.
-                    </small>
                 </div>
             </div>
         );
@@ -485,51 +417,31 @@ function LeaderboardErazerCumulative() {
         return (
             <div className='erazer_cup_cumulative'>
                 <img src={erazerLogo} alt="Erazer Logo" className="erazer_logo" />
-                <div style={{textAlign: 'center', marginTop: '50px', fontSize: '18px'}}>
-                    Chargement...
-                </div>
+                <div style={{ textAlign: 'center', marginTop: '50px', fontSize: '18px' }}>Chargement...</div>
             </div>
         );
     }
-
-    const filteredLeaderboard = leaderboard
-        ? leaderboard.filter(team => {
-            if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
-                return true;
-            }
-            if (!isNaN(searchQuery) && searchQuery.trim() !== '') {
-                const searchPosition = parseInt(searchQuery.trim());
-                if (team.place === searchPosition) {
-                    return true;
-                }
-            }
-
-            return false;
-        })
-        : [];
-    const startIndex = localPage * 10;
-    const endIndex = startIndex + 10;
-    const displayedLeaderboard = filteredLeaderboard.slice(startIndex, endIndex);
 
     return (
         <div className='erazer_cup_cumulative'>
             <img src={erazerLogo} alt="Erazer Logo" className="erazer_logo" />
 
             {isExporting && (
-                <div style={{
-                    position: 'fixed',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    color: 'white',
-                    padding: '20px',
-                    borderRadius: '10px',
-                    zIndex: 1000,
-                    textAlign: 'center'
-                }}>
-                    <div>Export CSV en cours...</div>
-                    <div style={{ fontSize: '12px', marginTop: '10px' }}>Récupération des données WLS...</div>
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        color: 'white',
+                        padding: '20px',
+                        borderRadius: '10px',
+                        zIndex: 1000,
+                        textAlign: 'center',
+                    }}
+                >
+                    Export CSV en cours...
                 </div>
             )}
 
@@ -544,7 +456,7 @@ function LeaderboardErazerCumulative() {
                     />
                 </div>
             )}
-            
+
             <div className='leaderboard_container'>
                 <div className='leaderboard_table'>
                     <div className='header_container'>
@@ -553,35 +465,89 @@ function LeaderboardErazerCumulative() {
                         <div className='info_header' style={{ fontSize: '12px' }}>AVG PLACE</div>
                         <div className='info_header'>ELIMS</div>
                         <div className='info_header'>WINS</div>
-                        <div className='info_header' onClick={nextPageFromPoints}>POINTS</div>
-                        {showGamesColumn && <div onClick={nextPageFromGames} className='info_header'>GAMES</div>}
+                        <div className='info_header' onClick={nextPage}>POINTS</div>
+                        {showGamesColumn && <div className='info_header' onClick={nextPage}>GAMES</div>}
                     </div>
-                    {displayedLeaderboard.map((data, index) => {
-                        const animationOrder = index + 1;
-                        
-                        return (
-                            <Row
-                                key={data.teamId || data.teamname}
-                                rank={data.place}
-                                teamname={data.teamname}
-                                points={data.points}
-                                elims={data.elims}
-                                wins={data.wins}
-                                games={data.games}
-                                avg_place={data.avg_place}
-                                order={animationOrder}
-                                showGamesColumn={showGamesColumn}
-                                cascadeFadeEnabled={cascadeFadeEnabled}
-                                cascadeIndex={index}
-                            />
-                        );
-                    })}
+
+                    {displayedLeaderboard.map((data, index) => (
+                        <Row
+                            key={data.teamId || data.teamname}
+                            rank={data.place}
+                            teamname={data.teamname}
+                            points={data.points}
+                            elims={data.elims}
+                            wins={data.wins}
+                            games={data.games}
+                            avg_place={data.avg_place}
+                            order={index + 1}
+                            showGamesColumn={showGamesColumn}
+                            onClick={() => setSelectedTeam(data.teamname)}
+                            cascadeFadeEnabled={cascadeFadeEnabled}
+                            cascadeIndex={index}
+                            showPositionIndicators={showPositionIndicators}
+                            positionChange={data.positionChange}
+                            alive={data.alive}
+                            showFlags={showFlags}
+                            memberData={data.memberData}
+                        />
+                    ))}
                 </div>
+            </div>
 
-
-        </div>
-
-
+            {selectedTeam && teamDetails[selectedTeam] && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 1200,
+                    }}
+                    onClick={closeModal}
+                >
+                    <div
+                        style={{
+                            width: 'min(900px, 92vw)',
+                            maxHeight: '80vh',
+                            overflowY: 'auto',
+                            background: '#111',
+                            border: '2px solid #5dbbd3',
+                            borderRadius: '10px',
+                            padding: '16px',
+                            color: '#fff',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <h3 style={{ margin: 0 }}>{selectedTeam}</h3>
+                            <button type="button" onClick={closeModal}>x</button>
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                            <strong>Classement cumule:</strong> #{teamDetails[selectedTeam].teamData.place} - {teamDetails[selectedTeam].teamData.points} pts
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                            <strong>Membres:</strong>
+                            <ul>
+                                {teamDetails[selectedTeam].members.map((member, idx) => (
+                                    <li key={`${member.id || member.name}-${idx}`}>{member.name}</li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                            <strong>Contribution par leaderboard:</strong>
+                            <ul>
+                                {teamDetails[selectedTeam].sources.map((source, idx) => (
+                                    <li key={`${source.leaderboardId}-${idx}`}>
+                                        {source.leaderboardId}: place {source.place}, {source.points} pts, {source.games} games
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

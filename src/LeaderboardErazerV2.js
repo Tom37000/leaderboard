@@ -1,11 +1,12 @@
 import './LeaderboardErazerV2.css';
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useLocation } from 'react-router-dom';
+import { enrichWithPreviousLeaderboard, fetchUnifiedLeaderboardData, parseExcludedSessionIds } from './leaderboardShared';
 import BackgroundImage from './erazer_leaderboard_background.png'
 
-function Row({ rank, teamname, points, elims, avg_place, wins, index, onClick, cascadeFadeEnabled, cascadeIndex, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged }) {
+function Row({ rank, teamname, points, elims, avg_place, wins, games, index, onClick, cascadeFadeEnabled, cascadeIndex, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, alive, showFlags, memberData }) {
     const renderPositionChange = () => {
-        if (!showPositionIndicators) {
+        if (!showPositionIndicators || alive || games < 2 || positionChange === null) {
             return null;
         }
         
@@ -126,7 +127,28 @@ function Row({ rank, teamname, points, elims, avg_place, wins, index, onClick, c
                 animationDelay: cascadeFadeEnabled ? `${cascadeIndex * 0.1}s` : '0s',
                 ...getAnimationStyle()
             }}>
-                <div className='name' style={{ cursor: 'pointer' }} onClick={() => onClick(teamname)}>{teamname}</div>
+                <div className='name' style={{ cursor: 'pointer' }} onClick={() => onClick(teamname)}>
+                    {alive && <span className='alive-dot' />}
+                    {showFlags && memberData && memberData.length > 0 ? (
+                        memberData.map((member, idx) => (
+                            <span key={idx} className='member_with_flag'>
+                                <img
+                                    src={`${process.env.PUBLIC_URL}/drapeaux-pays/${member.flag}.png`}
+                                    alt="flag"
+                                    className='flag_icon'
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = `${process.env.PUBLIC_URL}/drapeaux-pays/GroupIdentity_GeoIdentity_global.png`;
+                                    }}
+                                />
+                                <span>{member.name}</span>
+                                {idx < memberData.length - 1 && <span className='separator'> - </span>}
+                            </span>
+                        ))
+                    ) : (
+                        teamname
+                    )}
+                </div>
             </div>
             <div className='info points' style={{
                 opacity: cascadeFadeEnabled ? 0 : 1,
@@ -144,6 +166,9 @@ function LeaderboardErazerCup() {
     const urlParams = new URLSearchParams(location.search);
     const leaderboard_id = urlParams.get('id');
     const cascadeParam = urlParams.get('cascade');
+    const flagsParam = urlParams.get('flags');
+    const excludedSessionIds = useMemo(() => parseExcludedSessionIds(new URLSearchParams(location.search)), [location.search]);
+    const excludedSessionIdsKey = useMemo(() => Array.from(excludedSessionIds).sort().join(','), [excludedSessionIds]);
 
     const [allLeaderboardData, setAllLeaderboardData] = useState([]);
     const [leaderboard, setLeaderboard] = useState(null);
@@ -151,6 +176,8 @@ function LeaderboardErazerCup() {
     const [totalApiPages, setTotalApiPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const [showSearch, setShowSearch] = useState(true);
+    const [showFlags, setShowFlags] = useState(flagsParam === 'true');
+    const [epicIdToCountry, setEpicIdToCountry] = useState({});
     const [showGamesColumn, setShowGamesColumn] = useState(false);
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [teamDetails, setTeamDetails] = useState({});
@@ -170,8 +197,65 @@ function LeaderboardErazerCup() {
     }, [location.search]);
 
     useEffect(() => {
+        if (!showFlags) {
+            setEpicIdToCountry({});
+            return;
+        }
+
+        fetch(`${process.env.PUBLIC_URL}/id-epic-pays-database.txt`)
+            .then(response => response.text())
+            .then(data => {
+                const mapping = {};
+                const lines = data.split(/\r?\n/);
+                lines.forEach((line) => {
+                    line = line.trim();
+                    if (!line) return;
+
+                    const match = line.match(/^([a-f0-9]+):\s*(.+)$/);
+                    if (match) {
+                        const epicId = match[1].trim();
+                        const country = match[2].trim();
+                        mapping[epicId] = country;
+                    }
+                });
+                setEpicIdToCountry(mapping);
+            })
+            .catch(err => console.error('Error loading epic ID database:', err));
+    }, [showFlags]);
+
+    useEffect(() => {
         const loadAllPages = async () => {
             try {
+                const data = await fetchUnifiedLeaderboardData({
+                    leaderboardId: leaderboard_id,
+                    excludedSessionIds,
+                    showFlags,
+                    epicIdToCountry,
+                    forceRankByPoints: true,
+                    includeV7: true,
+                    indicatorsOnlyWhenAllDead: true,
+                });
+
+                setTotalApiPages(data.totalPages);
+                setShowGamesColumn(data.hasMultipleGames);
+                setShowPositionIndicators(data.showPositionIndicators);
+                setHasRefreshedOnce(true);
+
+                const merged = enrichWithPreviousLeaderboard(data.leaderboard, leaderboard);
+                setLeaderboard(merged.leaderboard);
+                setTeamDetails(data.teamDetails);
+
+                if (leaderboard && merged.changedCount > 0) {
+                    setLastChangeTime(Date.now());
+                    setAnimationEnabled(true);
+                    setTimeout(() => {
+                        setAnimationEnabled(false);
+                    }, 2000);
+                } else {
+                    setAnimationEnabled(false);
+                }
+
+                return;
                 const firstResponse = await fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}?page=0`);
                 const firstData = await firstResponse.json();
                 
@@ -359,7 +443,7 @@ function LeaderboardErazerCup() {
             const interval = setInterval(loadAllPages, 10000);
             return () => clearInterval(interval);
         }
-    }, [leaderboard_id]);
+    }, [leaderboard_id, epicIdToCountry, showFlags, excludedSessionIdsKey]);
 
     const exportToCSV = async () => {
         if (!leaderboard || isExporting) return;
@@ -574,13 +658,17 @@ function LeaderboardErazerCup() {
                             elims={data.elims} 
                             wins={data.wins} 
                             avg_place={data.avg_place}
+                            games={data.games}
                             onClick={handleTeamClick}
                             cascadeFadeEnabled={cascadeFadeEnabled}
                             cascadeIndex={index}
-                            positionChange={previousPositions[data.teamname] ? data.place - previousPositions[data.teamname] : 0}
+                            alive={data.alive}
+                            showFlags={showFlags}
+                            memberData={data.memberData}
+                            positionChange={data.positionChange || 0}
                             showPositionIndicators={showPositionIndicators}
                             animationEnabled={animationEnabled}
-                            hasPositionChanged={previousPositions[data.teamname] && previousPositions[data.teamname] !== data.place}
+                            hasPositionChanged={data.hasPositionChanged || false}
                         />
                     ) : ''}
                 </div>
@@ -602,13 +690,17 @@ function LeaderboardErazerCup() {
                             elims={data.elims} 
                             wins={data.wins} 
                             avg_place={data.avg_place}
+                            games={data.games}
                             onClick={handleTeamClick}
                             cascadeFadeEnabled={cascadeFadeEnabled}
                             cascadeIndex={index + 10}
-                            positionChange={previousPositions[data.teamname] ? data.place - previousPositions[data.teamname] : 0}
+                            alive={data.alive}
+                            showFlags={showFlags}
+                            memberData={data.memberData}
+                            positionChange={data.positionChange || 0}
                             showPositionIndicators={showPositionIndicators}
                             animationEnabled={animationEnabled}
-                            hasPositionChanged={previousPositions[data.teamname] && previousPositions[data.teamname] !== data.place}
+                            hasPositionChanged={data.hasPositionChanged || false}
                         />
                     ) : ''}
                 </div>
@@ -630,13 +722,17 @@ function LeaderboardErazerCup() {
                             elims={data.elims} 
                             wins={data.wins} 
                             avg_place={data.avg_place}
+                            games={data.games}
                             onClick={handleTeamClick}
                             cascadeFadeEnabled={cascadeFadeEnabled}
                             cascadeIndex={index + 20}
-                            positionChange={previousPositions[data.teamname] ? data.place - previousPositions[data.teamname] : 0}
+                            alive={data.alive}
+                            showFlags={showFlags}
+                            memberData={data.memberData}
+                            positionChange={data.positionChange || 0}
                             showPositionIndicators={showPositionIndicators}
                             animationEnabled={animationEnabled}
-                            hasPositionChanged={previousPositions[data.teamname] && previousPositions[data.teamname] !== data.place}
+                            hasPositionChanged={data.hasPositionChanged || false}
                         />
                     ) : ''}
                 </div>
@@ -658,13 +754,17 @@ function LeaderboardErazerCup() {
                             elims={data.elims} 
                             wins={data.wins} 
                             avg_place={data.avg_place}
+                            games={data.games}
                             onClick={handleTeamClick}
                             cascadeFadeEnabled={cascadeFadeEnabled}
                             cascadeIndex={index + 30}
-                            positionChange={previousPositions[data.teamname] ? data.place - previousPositions[data.teamname] : 0}
+                            alive={data.alive}
+                            showFlags={showFlags}
+                            memberData={data.memberData}
+                            positionChange={data.positionChange || 0}
                             showPositionIndicators={showPositionIndicators}
                             animationEnabled={animationEnabled}
-                            hasPositionChanged={previousPositions[data.teamname] && previousPositions[data.teamname] !== data.place}
+                            hasPositionChanged={data.hasPositionChanged || false}
                         />
                     ) : ''}
                 </div>

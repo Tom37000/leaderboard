@@ -1,6 +1,7 @@
 import './LeaderboardSlyHvK.css';
-import React, {useState, useEffect} from "react"
+import React, {useState, useEffect, useMemo} from "react"
 import { useLocation } from 'react-router-dom';
+import { enrichWithPreviousLeaderboard, fetchUnifiedLeaderboardData, parseExcludedSessionIds } from './leaderboardShared';
 import solaryLogo from './solary.png';
 import havokLogo from './havok.png';
 
@@ -121,9 +122,16 @@ const getTeamLogo = (teamname) => {
     return null;
 };
 
-const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex}) {
+const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive, showFlags, memberData}) {
     const renderPositionChange = () => {
-        return null;
+        if (!showPositionIndicators || alive || games < 2 || positionChange === null || positionChange === 0) {
+            return null;
+        }
+        return (
+            <span className={`position_change ${positionChange > 0 ? 'positive' : 'negative'}`}>
+                {positionChange > 0 ? `+${positionChange}` : positionChange}
+            </span>
+        );
     };
 
     const getAnimationStyle = () => {
@@ -194,18 +202,38 @@ const Row = React.memo(function Row({rank, teamname, points, elims, avg_place, w
                 alignItems: 'center',
                 gap: '10px'
             }} onClick={onClick}>
-                {getTeamLogo(teamname) && (
-                    <img 
-                        src={getTeamLogo(teamname)} 
-                        alt="Team Logo" 
-                        style={{
-                            width: '30px',
-                            height: '30px',
-                            objectFit: 'contain'
-                        }}
-                    />
+                {showFlags && memberData && memberData.length > 0 ? (
+                    memberData.map((member, idx) => (
+                        <span key={idx} className='member_with_flag'>
+                            <img
+                                src={`${process.env.PUBLIC_URL}/drapeaux-pays/${member.flag}.png`}
+                                alt="flag"
+                                className='flag_icon'
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = `${process.env.PUBLIC_URL}/drapeaux-pays/GroupIdentity_GeoIdentity_global.png`;
+                                }}
+                            />
+                            <span>{member.name}</span>
+                            {idx < memberData.length - 1 && <span className='separator'> - </span>}
+                        </span>
+                    ))
+                ) : (
+                    <>
+                        {getTeamLogo(teamname) && (
+                            <img 
+                                src={getTeamLogo(teamname)} 
+                                alt="Team Logo" 
+                                style={{
+                                    width: '30px',
+                                    height: '30px',
+                                    objectFit: 'contain'
+                                }}
+                            />
+                        )}
+                        <span>{teamname}</span>
+                    </>
                 )}
-                <span>{teamname}</span>
             </div>
             <div className='info_box'>{avg_place.toFixed(2)}</div>  
             <div className='info_box'>{elims}</div>  
@@ -239,6 +267,15 @@ function LeaderboardSlyHvK() {
     const urlParams = new URLSearchParams(location.search);
     const leaderboard_id = urlParams.get('id');
     const cascadeParam = urlParams.get('cascade');
+    const flagsParam = urlParams.get('flags');
+    const excludedSessionIds = useMemo(
+        () => parseExcludedSessionIds(new URLSearchParams(location.search)),
+        [location.search]
+    );
+    const excludedSessionIdsKey = useMemo(
+        () => Array.from(excludedSessionIds).sort().join(','),
+        [excludedSessionIds]
+    );
 
     const [leaderboard, setLeaderboard] = useState([]);
     const [apiPage, setApiPage] = useState(0); 
@@ -246,6 +283,8 @@ function LeaderboardSlyHvK() {
     const [totalApiPages, setTotalApiPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState(""); 
     const [showSearch, setShowSearch] = useState(true); 
+    const [showFlags, setShowFlags] = useState(flagsParam === 'true');
+    const [epicIdToCountry, setEpicIdToCountry] = useState({});
 
 
     const [showGamesColumn, setShowGamesColumn] = useState(false);
@@ -260,8 +299,70 @@ function LeaderboardSlyHvK() {
     const [previousLeaderboard, setPreviousLeaderboard] = useState(null);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+    useEffect(() => {
+        if (!showFlags) {
+            setEpicIdToCountry({});
+            return;
+        }
+
+        fetch(`${process.env.PUBLIC_URL}/id-epic-pays-database.txt`)
+            .then(response => response.text())
+            .then(data => {
+                const mapping = {};
+                const lines = data.split(/\r?\n/);
+                lines.forEach((line) => {
+                    line = line.trim();
+                    if (!line) return;
+
+                    const match = line.match(/^([a-f0-9]+):\s*(.+)$/);
+                    if (match) {
+                        const epicId = match[1].trim();
+                        const country = match[2].trim();
+                        mapping[epicId] = country;
+                    }
+                });
+                setEpicIdToCountry(mapping);
+            })
+            .catch(err => console.error('Error loading epic ID database:', err));
+    }, [showFlags]);
+
     const loadLeaderboard = async () => {
         try {
+            const data = await fetchUnifiedLeaderboardData({
+                leaderboardId: leaderboard_id,
+                excludedSessionIds,
+                showFlags,
+                epicIdToCountry,
+                forceRankByPoints: true,
+                includeV7: true,
+                indicatorsOnlyWhenAllDead: true,
+            });
+
+            setTotalApiPages(data.totalPages);
+            setShowGamesColumn(data.hasMultipleGames);
+            setShowPositionIndicators(data.showPositionIndicators);
+            setHasRefreshedOnce(true);
+
+            const merged = enrichWithPreviousLeaderboard(data.leaderboard, previousLeaderboard);
+            setLeaderboard(merged.leaderboard);
+            setTeamDetails(data.teamDetails);
+            setPreviousLeaderboard(merged.leaderboard);
+
+            if (isInitialLoad) {
+                setIsInitialLoad(false);
+            }
+
+            if (previousLeaderboard && merged.changedCount > 0) {
+                setLastChangeTime(Date.now());
+                setAnimationEnabled(true);
+                setTimeout(() => {
+                    setAnimationEnabled(false);
+                }, 2500);
+            } else {
+                setAnimationEnabled(false);
+            }
+
+            return;
             const firstResponse = await fetch(`https://api.wls.gg/v5/leaderboards/${leaderboard_id}?page=0`);
             const firstData = await firstResponse.json();
             
@@ -468,7 +569,7 @@ function LeaderboardSlyHvK() {
         const interval = setInterval(loadLeaderboard, 15000);
         
         return () => clearInterval(interval);
-    }, [leaderboard_id]);
+    }, [leaderboard_id, epicIdToCountry, showFlags, excludedSessionIdsKey]);
 
     useEffect(() => {
         function handleKeyDown(event) {
@@ -659,6 +760,9 @@ function LeaderboardSlyHvK() {
                                 hasPositionChanged={data.hasPositionChanged || false}
                                 cascadeFadeEnabled={cascadeFadeEnabled}
                                 cascadeIndex={index}
+                                alive={data.alive}
+                                showFlags={showFlags}
+                                memberData={data.memberData}
                             />
                         );
                     })}
