@@ -13,8 +13,8 @@ const NAME_LETTER_SPACING_EM = 0.025;
 const NAME_RIGHT_SAFETY_PX = 26;
 const NAME_FIT_SAFETY_FACTOR = 0.94;
 
-function mapEntriesToRows(entries) {
-  return entries
+function mapEntriesToRows(entries, maxEntries = MAX_ENTRIES) {
+  const rows = entries
     .map((team) => {
       const members = team?.members ? Object.values(team.members) : [];
       const stats = team?.stats || {};
@@ -37,8 +37,12 @@ function mapEntriesToRows(entries) {
     })
     .filter((row) => row.teamName)
     .sort((a, b) => (a.rank - b.rank) || (b.points - a.points))
-    .slice(0, MAX_ENTRIES)
     .map(({ place, teamName, points, alive }) => ({ place, teamName, points, alive }));
+
+  if (!Number.isFinite(maxEntries)) {
+    return rows;
+  }
+  return rows.slice(0, Math.max(0, maxEntries));
 }
 
 function applySimulatedAliveStatus(rows, { enabled, onlyAlive, forcedCount }) {
@@ -129,7 +133,7 @@ function PopUpLeaderboard() {
 
         const data = await response.json();
         const entries = Array.isArray(data?.queries?.[0]?.entries) ? data.queries[0].entries : [];
-        const mappedRows = mapEntriesToRows(entries);
+        const mappedRows = mapEntriesToRows(entries, onlyAlive ? Number.POSITIVE_INFINITY : MAX_ENTRIES);
         const effectiveRows = applySimulatedAliveStatus(mappedRows, {
           enabled: simulateAlive,
           onlyAlive,
