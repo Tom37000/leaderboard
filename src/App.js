@@ -19,6 +19,7 @@ import LeaderboardErazerCumulative from './LeaderboardErazerCumulative';
 import LeaderboardErazerCumulativeV2 from './LeaderboardErazerCumulativeV2';
 import LeaderboardErazerCumulativeV3 from './LeaderboardErazerCumulativeV3';
 import OverlayJoueursEnvie from './overlay_joueurs_envie';
+import OverlayJoueursEnvieV2 from './overlay_joueurs_envie_v2';
 import LeaderboardPP_RVJ from './LeaderboardPP_RVJ';
 import LeaderboardCoupeDeFrance from './LeaderboardCoupeDeFrance';
 import LeaderboardStizoVictory from './LeaderboardStizoVictory';
@@ -52,6 +53,7 @@ function App() {
         <Route path="/erazer_cumulative_leaderboard_v2" element={<LeaderboardErazerCumulativeV2 />} />
         <Route path="/erazer_cumulative_leaderboard_v3" element={<LeaderboardErazerCumulativeV3 />} />
         <Route path="/overlay_joueurs_envie" element={<OverlayJoueursEnvie />} />
+        <Route path="/overlay_joueurs_envie_v2" element={<OverlayJoueursEnvieV2 />} />
         <Route path="/pp_revenja_leaderboard" element={<LeaderboardPP_RVJ />} />
         <Route path="/coupedefrance_leaderboard" element={<LeaderboardCoupeDeFrance />} />
         <Route path="/stizo_victory_leaderboard" element={<LeaderboardStizoVictory />} />
