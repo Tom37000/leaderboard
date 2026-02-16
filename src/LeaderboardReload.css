@@ -62,12 +62,12 @@
 }
 
 .reload .two-columns .row_container .name_container {
-  width: 415px;
+  width: 393px;
   overflow: visible;
 }
 
 .reload .two-columns .header_container .name_header {
-  width: 415px;
+  width: 393px;
 }
 
 .reload .two-columns .row_container .info_box {
@@ -77,17 +77,39 @@
 
 .reload .two-columns .header_container .info_header {
   width: 74px;
+  box-sizing: border-box;
+  padding: 0 3px;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  text-align: center;
+}
+
+.reload .two-columns .header_container .info_header.avg_place_header {
+  width: 96px;
+  font-size: 13px;
+  letter-spacing: 0;
 }
 
 .reload .two-columns .header_container .info_header.games_header {
-  width: 84px;
+  width: 96px;
   box-sizing: border-box;
-  padding-left: 4px;
+  padding: 0 12px;
   white-space: nowrap;
+  font-size: 14px;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  text-align: center;
 }
 
 .reload .two-columns .row_container .info_box.games_box {
-  width: 84px;
+  width: 96px;
+}
+
+.reload .two-columns .row_container .info_box.avg_place_box {
+  width: 96px;
 }
 
 .reload .leaderboard_container {
@@ -220,7 +242,7 @@
 }
 
 .reload .header_container .info_header {
-  width: 118.99px;
+  width: 150px;
   height: 62px;
   display: flex;
   justify-content: center;
@@ -229,6 +251,13 @@
   font-family: "Eurostile";
   font-weight: bold;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+  padding: 0 8px;
+  box-sizing: border-box;
+  letter-spacing: -0.15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  text-align: center;
 }
 
 .reload .search_container {

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useLocation } from 'react-router-dom';
 import { enrichWithPreviousLeaderboard, fetchUnifiedLeaderboardData, parseExcludedSessionIds } from './leaderboardShared';
 
-const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive, showFlags, memberData }) {
+const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive, showFlags, memberData, isSingleColumnLayout }) {
     const renderPositionChange = () => {
 
         if (!showPositionIndicators || alive || games < 2 || positionChange === null) {
@@ -42,7 +42,7 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
                 display: 'inline-block',
                 marginLeft: '0px',
                 position: 'absolute',
-                right: '-36px',
+                right: isSingleColumnLayout ? '-20px' : '-36px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 pointerEvents: 'none'
@@ -106,6 +106,29 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
         };
     };
 
+    const hasFlagMembers = showFlags && memberData && memberData.length > 0;
+    const estimatedLabelLength = hasFlagMembers
+        ? memberData.reduce((sum, member) => sum + (member?.name?.length || 0), 0) + ((memberData.length - 1) * 3) + (memberData.length * 4) + (alive ? 2 : 0)
+        : teamname.length + (alive ? 2 : 0);
+
+    const getTeamFontSize = (length) => {
+        if (length > 90) return '5px';
+        if (length > 82) return '6px';
+        if (length > 74) return '7px';
+        if (length > 66) return '8px';
+        if (length > 58) return '9px';
+        if (length > 52) return '10px';
+        if (length > 46) return '11px';
+        if (length > 40) return '12px';
+        if (length > 34) return '13px';
+        if (length > 28) return hasFlagMembers ? '13px' : '14px';
+        if (length > 22) return hasFlagMembers ? '15px' : '16px';
+        if (length > 16) return hasFlagMembers ? '16px' : '17px';
+        return hasFlagMembers ? '18px' : '19px';
+    };
+
+    const teamFontSize = getTeamFontSize(estimatedLabelLength);
+
     return (
         <div className='row_container' style={{
             '--animation-order': order,
@@ -127,9 +150,15 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
             </div>
             <div className='name_container' style={{
                 cursor: 'pointer',
-                fontSize: teamname.length > 70 ? '6px' : teamname.length > 65 ? '7px' : teamname.length > 60 ? '7px' : teamname.length > 55 ? '8px' : teamname.length > 50 ? '9px' : teamname.length > 45 ? '10px' : teamname.length > 40 ? '11px' : teamname.length > 35 ? '12px' : teamname.length > 30 ? '13px' : teamname.length > 25 ? '14px' : teamname.length > 20 ? '16px' : teamname.length > 15 ? '17px' : '19px',
+                fontSize: teamFontSize,
                 whiteSpace: 'nowrap',
-                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.7)'
+                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.7)',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                paddingLeft: '20px',
+                paddingRight: '20px',
+                boxSizing: 'border-box'
             }} onClick={onClick}>
                 {alive && <span className='alive-dot' />}
                 {showFlags && memberData && memberData.length > 0 ? (
@@ -152,7 +181,7 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
                     teamname
                 )}
             </div>
-            <div className='info_box'>{avg_place.toFixed(2)}</div>
+            <div className='info_box avg_place_box'>{avg_place.toFixed(2)}</div>
             <div className='info_box'>{elims}</div>
             <div className='info_box'>{wins}</div>
             <div className='info_box'>{points}</div>
@@ -177,7 +206,8 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
         prevProps.cascadeFadeEnabled === nextProps.cascadeFadeEnabled &&
         prevProps.alive === nextProps.alive &&
         prevProps.showFlags === nextProps.showFlags &&
-        prevProps.memberData === nextProps.memberData
+        prevProps.memberData === nextProps.memberData &&
+        prevProps.isSingleColumnLayout === nextProps.isSingleColumnLayout
     );
 });
 
@@ -580,12 +610,13 @@ function LeaderboardReload() {
         localPage * 20 + 10,
         localPage * 20 + 20
     );
+    const isSingleColumnLayout = rightItems.length === 0;
 
     const renderHeader = () => (
         <div className='header_container'>
             <div className='rank_header' onClick={previousPage}>PLACE</div>
             <div className='name_header'>ÉQUIPES</div>
-            <div style={{ fontSize: '13px' }} className='info_header'>AVG PLACE</div>
+            <div className='info_header avg_place_header' style={{ fontSize: '11px' }}>AVG PLACE</div>
             <div className='info_header'>ELIMS</div>
             <div className='info_header'>WINS</div>
             <div className='info_header' onClick={nextPage}>PTS</div>
@@ -625,6 +656,7 @@ function LeaderboardReload() {
                 alive={data.alive}
                 showFlags={showFlags}
                 memberData={data.memberData}
+                isSingleColumnLayout={isSingleColumnLayout}
             />
         );
     });
@@ -655,7 +687,7 @@ function LeaderboardReload() {
                     fontWeight: 'bold'
                 }}>Classement | Finale Reload Duos</div>
 
-                <div className='dual_leaderboard two-columns'>
+                <div className={`dual_leaderboard ${isSingleColumnLayout ? 'single-column' : 'two-columns'}`}>
                     <div className='leaderboard_column'>
                         {renderHeader()}
                         {renderRows(leftItems, 0)}

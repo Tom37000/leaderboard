@@ -253,3 +253,13 @@ html, body {
   left: calc(100% + 4px) !important;
   right: auto !important;
 }
+
+.single-column .row_container .rank_container .position_change,
+.single-column .row_container .rank_container .position_indicator {
+  left: calc(100% - 8px) !important;
+}
+
+.leaderboard_table .row_container .rank_container .position_change,
+.leaderboard_table .row_container .rank_container .position_indicator {
+  left: calc(100% - 12px) !important;
+}
