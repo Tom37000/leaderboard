@@ -63,7 +63,6 @@
   }
 }
 
-/* Animation pour les équipes qui apparaissent */
 @keyframes smoothAppear {
   0% {
     opacity: 0;
@@ -93,14 +92,14 @@
 @keyframes slideFromTo {
   0% {
     transform: translateY(var(--slide-from));
-    opacity: 0.8; /* Légère transparence au début */
+    opacity: 0.8;
   }
   50% {
-    opacity: 0.9; /* Opacité intermédiaire */
+    opacity: 0.9; 
   }
   100% {
     transform: translateY(var(--slide-to));
-    opacity: 1; /* Opacité complète à la fin */
+    opacity: 1;
   }
 }
 
@@ -209,7 +208,6 @@ html, body {
   overflow-y: auto;
 }
 
-/* Styles pour les changements de position */
 .position_change {
   font-size: 16px;
   font-weight: bold;
@@ -241,4 +239,17 @@ html, body {
   color: #ffffff !important;
   background-color: #757575 !important;
   border-color: #9E9E9E !important;
+}
+
+.row_container .name_container > .member_with_flag:first-child,
+.row_container .name_container > .alive-dot + .member_with_flag,
+.row_container .name_container .team_name > .member_with_flag:first-child,
+.row_container .name_container .team_name > .alive-dot + .member_with_flag {
+  margin-left: 40px;
+}
+
+.row_container .rank_container .position_change,
+.row_container .rank_container .position_indicator {
+  left: calc(100% + 4px) !important;
+  right: auto !important;
 }
