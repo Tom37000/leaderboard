@@ -1,0 +1,195 @@
+@font-face {
+  font-family: "OmnesBlack";
+  src: url("./OmnesBlack.ttf");
+  font-weight: 900;
+  font-style: normal;
+}
+
+html,
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+.overlay_joueurs_ {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 2.2vh;
+  box-sizing: border-box;
+  background: transparent;
+  user-select: none;
+  pointer-events: none;
+}
+
+.popup-overlay {
+  position: relative;
+  width: min(calc((100vh - 4.4vh) * 0.6), calc(100vw - 4.4vh));
+  max-height: calc(100vh - 4.4vh);
+  aspect-ratio: 3 / 5;
+  border-radius: clamp(14px, 1.8vh, 28px);
+  overflow: hidden;
+}
+
+.popup-background {
+  position: absolute;
+  inset: 0;
+  background-image: url("./OVERLAY_POPUP.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  border-radius: inherit;
+}
+
+.popup-data-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+
+  --rows-start: 36.4%;
+  --row-step: 6.245%;
+  --row-height: 5.6%;
+  --rank-left: 9.1%;
+  --rank-width: 12.8%;
+  --team-left: 24.5%;
+  --team-width: 49%;
+  --points-left: 75.8%;
+  --points-width: 12.3%;
+}
+
+.popup-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--rows-start) + var(--row-index) * var(--row-step));
+  height: var(--row-height);
+}
+
+.popup-team-rank,
+.popup-team-name,
+.popup-team-points {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  height: 100%;
+  color: #ffffff;
+  font-family: "OmnesBlack", "Eurostile", sans-serif;
+  letter-spacing: 0.025em;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.88), 0 0 8px rgba(0, 0, 0, 0.8), 0 0 16px rgba(0, 0, 0, 0.45);
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.5);
+  text-transform: uppercase;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.popup-team-rank {
+  left: var(--rank-left);
+  width: var(--rank-width);
+  justify-content: center;
+  font-size: clamp(15px, 2.8vh, 38px);
+  font-variant-numeric: tabular-nums;
+}
+
+.popup-team-name {
+  left: var(--team-left);
+  width: var(--team-width);
+  justify-content: center;
+  padding-left: 1%;
+  padding-right: 3%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.popup-team-name-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(5px, 0.45vw, 10px);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.popup-team-points {
+  left: var(--points-left);
+  width: var(--points-width);
+  justify-content: center;
+  font-size: clamp(12px, 2.3vh, 30px);
+  font-variant-numeric: tabular-nums;
+}
+
+.popup-team-name-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  min-width: 0;
+  text-align: center;
+}
+
+.popup-alive-icon {
+  width: clamp(7px, 0.9vh, 12px);
+  height: clamp(7px, 0.9vh, 12px);
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: radial-gradient(circle at 30% 30%, #ffd3d3 0%, #ff5151 35%, #f11212 68%, #a40000 100%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 9px rgba(255, 40, 40, 0.88), 0 0 16px rgba(255, 30, 30, 0.62);
+  animation: alive-live-pulse 1.1s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+.popup-row.is-alive .popup-team-rank,
+.popup-row.is-alive .popup-team-name,
+.popup-row.is-alive .popup-team-points {
+  color: #ffffff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.78), 0 0 18px rgba(255, 46, 46, 0.5);
+}
+
+.popup-row.is-dead .popup-team-rank,
+.popup-row.is-dead .popup-team-name,
+.popup-row.is-dead .popup-team-points {
+  color: #ffe5e5;
+  opacity: 0.6;
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.88), 0 0 6px rgba(0, 0, 0, 0.72);
+}
+
+@keyframes alive-live-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 8px rgba(255, 55, 55, 0.78), 0 0 14px rgba(255, 36, 36, 0.5);
+  }
+  35% {
+    transform: scale(1.2);
+    opacity: 1;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 13px rgba(255, 40, 40, 0.95), 0 0 24px rgba(255, 40, 40, 0.74);
+  }
+  55% {
+    transform: scale(1.05);
+    opacity: 0.92;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 10px rgba(255, 55, 55, 0.82), 0 0 18px rgba(255, 42, 42, 0.58);
+  }
+  75% {
+    transform: scale(1.16);
+    opacity: 1;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 14px rgba(255, 35, 35, 0.96), 0 0 26px rgba(255, 35, 35, 0.76);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 8px rgba(255, 55, 55, 0.78), 0 0 14px rgba(255, 36, 36, 0.5);
+  }
+}
+
+@media (max-width: 900px) {
+  .overlay_joueurs_ {
+    justify-content: center;
+  }
+
+  .popup-overlay {
+    width: min(94vw, calc((100vh - 4.4vh) * 0.6));
+  }
+}

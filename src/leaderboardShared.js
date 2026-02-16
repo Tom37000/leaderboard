@@ -30,8 +30,18 @@ function sortMembersById(members) {
     return [...members].sort((a, b) => String(a?.id || '').localeCompare(String(b?.id || '')));
 }
 
+function getMemberDisplayName(member) {
+    return (
+        member?.name ||
+        member?.ingame_name ||
+        member?.ingameName ||
+        member?.ingame ||
+        ''
+    );
+}
+
 function buildTeamName(members) {
-    return members.map((member) => member?.name || '').filter(Boolean).join(' - ');
+    return members.map((member) => getMemberDisplayName(member)).filter(Boolean).join(' - ');
 }
 
 function toNumber(value, fallback = 0) {
@@ -119,7 +129,7 @@ function buildMemberData(members, showFlags, epicIdToCountry) {
     return members.map((member) => {
         const epicId = member?.ingame_id || member?.id;
         return {
-            name: member?.name || '',
+            name: getMemberDisplayName(member),
             flag: epicIdToCountry?.[epicId] || 'GroupIdentity_GeoIdentity_global',
         };
     });

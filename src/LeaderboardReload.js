@@ -687,7 +687,7 @@ function LeaderboardReload() {
                     fontWeight: 'bold'
                 }}>Classement | Finale Reload Duos</div>
 
-                <div className={`dual_leaderboard ${isSingleColumnLayout ? 'single-column' : 'two-columns'}`}>
+                <div className='dual_leaderboard two-columns'>
                     <div className='leaderboard_column'>
                         {renderHeader()}
                         {renderRows(leftItems, 0)}

@@ -170,7 +170,7 @@ function Row({ rank, teamname, points, elims, avg_place, wins, games, order, sho
 function LeaderboardStizoCup() {
     const location = useLocation();
     const urlParams = new URLSearchParams(location.search);
-    const leaderboard_id = urlParams.get('id');
+    const leaderboard_id = urlParams.get('id') || urlParams.get('leaderboard_id') || urlParams.get('leaderboardId');
     const cascadeParam = urlParams.get('cascade');
     const flagsParam = urlParams.get('flags');
     const excludedSessionIds = useMemo(() => parseExcludedSessionIds(new URLSearchParams(location.search)), [location.search]);
@@ -232,6 +232,11 @@ function LeaderboardStizoCup() {
     }, []);
 
     useEffect(() => {
+        if (!leaderboard_id) {
+            setLeaderboard([]);
+            return;
+        }
+
         const loadAllPages = async () => {
             try {
                 const data = await fetchUnifiedLeaderboardData({
@@ -370,11 +375,11 @@ function LeaderboardStizoCup() {
                 });
 
                 let updatedLeaderboardData;
-                const previousLeaderboard = leaderboard;
+                const previousLeaderboardSnapshot = leaderboard;
                 
-                if (previousLeaderboard) {
+                if (previousLeaderboardSnapshot) {
                     updatedLeaderboardData = allLeaderboardData.map(team => {
-                        const existingTeam = previousLeaderboard.find(prev => prev.teamname === team.teamname);
+                        const existingTeam = previousLeaderboardSnapshot.find(prev => prev.teamname === team.teamname);
 
                         if (existingTeam && existingTeam.place === team.place) {
                             const dataChanged = existingTeam.points !== team.points || 
@@ -562,17 +567,30 @@ function LeaderboardStizoCup() {
             )}
             
             <div className='leaderboard_container'>
-                <div className='leaderboard_table'>
-                    <div className='header_container'>
-                        <div className='rank_header' onClick={previousPage}>PLACE</div>
-                        <div className='name_header'>JOUEURS</div>
-                        <div className='info_header' style={{ fontSize: '12px' }}>AVG PLACE</div>
-                        <div className='info_header'>ELIMS</div>
-                        <div className='info_header'>WINS</div>
-                        <div className='info_header' onClick={nextPageFromPoints}>POINTS</div>
-                        {showGamesColumn && <div onClick={nextPageFromGames} className='info_header'>GAMES</div>}
+                {!leaderboard_id && (
+                    <div style={{
+                        color: '#ffffff',
+                        textAlign: 'center',
+                        paddingTop: '200px',
+                        fontFamily: 'Eurostile',
+                        fontSize: '24px',
+                        fontWeight: 'bold'
+                    }}>
+                        Parametre id manquant dans l'URL (id ou leaderboard_id).
                     </div>
-                    {displayedLeaderboard.map((data, index) => {
+                )}
+                {leaderboard_id && (
+                    <div className='leaderboard_table'>
+                        <div className='header_container'>
+                            <div className='rank_header' onClick={previousPage}>PLACE</div>
+                            <div className='name_header'>JOUEURS</div>
+                            <div className='info_header' style={{ fontSize: '12px' }}>AVG PLACE</div>
+                            <div className='info_header'>ELIMS</div>
+                            <div className='info_header'>WINS</div>
+                            <div className='info_header' onClick={nextPageFromPoints}>POINTS</div>
+                            {showGamesColumn && <div onClick={nextPageFromGames} className='info_header'>GAMES</div>}
+                        </div>
+                        {displayedLeaderboard.map((data, index) => {
                         const positionChange = Math.abs(data.positionChange || 0);
                         let animationOrder;
                         
@@ -614,8 +632,9 @@ function LeaderboardStizoCup() {
                                 memberData={data.memberData}
                             />
                         );
-                    })}
-                </div>
+                        })}
+                    </div>
+                )}
 
             </div>
 
