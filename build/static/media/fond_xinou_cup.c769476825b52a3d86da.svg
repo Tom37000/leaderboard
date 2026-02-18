@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+
+    <!-- Glow filter - soft -->
+    <filter id="glow-soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Glow filter - strong -->
+    <filter id="glow-strong" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="b1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Base dark blue gradient -->
+    <linearGradient id="bg-base" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#040d1a"/>
+      <stop offset="25%"  stop-color="#071525"/>
+      <stop offset="60%"  stop-color="#060e1d"/>
+      <stop offset="100%" stop-color="#030912"/>
+    </linearGradient>
+
+    <!-- Main hotspot glow (upper center) -->
+    <radialGradient id="hotspot-main" cx="50%" cy="18%" r="42%" fx="50%" fy="18%">
+      <stop offset="0%"   stop-color="#3a8fd4" stop-opacity="0.55"/>
+      <stop offset="25%"  stop-color="#1a5090" stop-opacity="0.35"/>
+      <stop offset="60%"  stop-color="#0d2a50" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#040d1a" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Bright center burst -->
+    <radialGradient id="hotspot-burst" cx="50%" cy="18%" r="12%">
+      <stop offset="0%"   stop-color="#90d0ff" stop-opacity="0.9"/>
+      <stop offset="40%"  stop-color="#4aabff" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#1a5090" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Right-side secondary glow -->
+    <radialGradient id="hotspot-secondary" cx="80%" cy="35%" r="25%">
+      <stop offset="0%"   stop-color="#2a70c0" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#040d1a" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Bottom subtle glow -->
+    <radialGradient id="hotspot-bottom" cx="30%" cy="85%" r="30%">
+      <stop offset="0%"   stop-color="#0d2a50" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#040d1a" stop-opacity="0"/>
+    </radialGradient>
+
+  </defs>
+
+  <!-- ===== BACKGROUND ===== -->
+  <rect width="1920" height="1080" fill="url(#bg-base)"/>
+  <rect width="1920" height="1080" fill="url(#hotspot-main)"/>
+  <rect width="1920" height="1080" fill="url(#hotspot-burst)"/>
+  <rect width="1920" height="1080" fill="url(#hotspot-secondary)"/>
+  <rect width="1920" height="1080" fill="url(#hotspot-bottom)"/>
+
+  <!-- ===== GLOW LAYER (blurred cracks) ===== -->
+  <g filter="url(#glow-soft)" stroke="#4aaeff" fill="none" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- PRIMARY CRACKS from focal (960, 195) -->
+    <polyline points="960,195 680,115 380,50 100,0"         stroke-width="2.2" opacity="0.75"/>
+    <polyline points="960,195 1240,110 1580,35 1920,0"      stroke-width="2"   opacity="0.70"/>
+    <polyline points="960,195 960,80 970,0"                  stroke-width="1.8" opacity="0.65"/>
+    <polyline points="960,195 480,340 100,500 0,570"        stroke-width="2.2" opacity="0.75"/>
+    <polyline points="960,195 1480,360 1800,520 1920,600"   stroke-width="2"   opacity="0.70"/>
+    <polyline points="960,195 820,500 700,800 620,1080"     stroke-width="2"   opacity="0.70"/>
+    <polyline points="960,195 1120,480 1280,780 1380,1080"  stroke-width="1.9" opacity="0.68"/>
+    <polyline points="960,195 750,600 560,900 400,1080"     stroke-width="1.6" opacity="0.60"/>
+    <polyline points="960,195 1250,680 1500,950 1600,1080"  stroke-width="1.6" opacity="0.60"/>
+
+    <!-- SECONDARY FOCAL (420, 520) -->
+    <polyline points="420,520 180,380 0,280"                stroke-width="1.6" opacity="0.60"/>
+    <polyline points="420,520 120,600 0,660"                stroke-width="1.4" opacity="0.55"/>
+    <polyline points="420,520 280,750 80,980 0,1040"       stroke-width="1.4" opacity="0.55"/>
+    <polyline points="420,520 600,720 760,940 800,1080"    stroke-width="1.3" opacity="0.50"/>
+
+    <!-- SECONDARY FOCAL (1550, 400) -->
+    <polyline points="1550,400 1750,300 1920,220"          stroke-width="1.5" opacity="0.58"/>
+    <polyline points="1550,400 1800,600 1920,720"          stroke-width="1.4" opacity="0.55"/>
+    <polyline points="1550,400 1700,800 1780,1080"         stroke-width="1.3" opacity="0.50"/>
+
+    <!-- CROSS / HORIZONTAL CRACKS -->
+    <polyline points="0,150 280,195 600,185 960,195"        stroke-width="1.3" opacity="0.50"/>
+    <polyline points="960,195 1300,210 1600,190 1920,185"   stroke-width="1.2" opacity="0.48"/>
+    <polyline points="0,820 380,800 750,830 1050,810 1380,840 1700,820 1920,850" stroke-width="1.2" opacity="0.45"/>
+    <polyline points="0,430 200,440 420,520 700,490 960,510 1200,500 1550,400" stroke-width="1.1" opacity="0.42"/>
+
+    <!-- TERTIARY BRANCHES -->
+    <polyline points="680,115 620,260 580,450"              stroke-width="1"   opacity="0.42"/>
+    <polyline points="480,340 380,250 300,120"              stroke-width="0.9" opacity="0.40"/>
+    <polyline points="820,500 700,460 580,490"              stroke-width="0.9" opacity="0.40"/>
+    <polyline points="1120,480 1250,420 1380,460"           stroke-width="0.9" opacity="0.40"/>
+    <polyline points="1280,780 1450,750 1550,780"           stroke-width="0.8" opacity="0.38"/>
+    <polyline points="700,800 600,720 560,600"              stroke-width="0.8" opacity="0.38"/>
+    <polyline points="1240,110 1180,280 1100,460"           stroke-width="1"   opacity="0.42"/>
+    <polyline points="380,50 350,180 320,350"               stroke-width="0.9" opacity="0.40"/>
+    <polyline points="420,520 550,560 700,600"              stroke-width="0.8" opacity="0.38"/>
+    <polyline points="1480,360 1400,500 1280,650"           stroke-width="0.9" opacity="0.40"/>
+    <polyline points="280,750 420,780 560,760"              stroke-width="0.7" opacity="0.35"/>
+    <polyline points="1380,840 1420,950 1450,1080"          stroke-width="0.7" opacity="0.35"/>
+    <polyline points="1050,810 1100,900 1120,1080"          stroke-width="0.7" opacity="0.35"/>
+    <polyline points="750,830 720,950 700,1080"             stroke-width="0.7" opacity="0.35"/>
+    <polyline points="0,580 100,600 200,580 420,520"        stroke-width="0.8" opacity="0.38"/>
+    <polyline points="1920,400 1780,420 1650,460 1550,400"  stroke-width="0.8" opacity="0.38"/>
+  </g>
+
+  <!-- ===== STRONG GLOW near focal point ===== -->
+  <g filter="url(#glow-strong)" stroke="#80c8ff" fill="none" stroke-linecap="round" opacity="0.6">
+    <polyline points="960,195 680,115 380,50"               stroke-width="1.8"/>
+    <polyline points="960,195 1240,110 1580,35"             stroke-width="1.6"/>
+    <polyline points="960,195 480,340 100,500"              stroke-width="1.8"/>
+    <polyline points="960,195 1480,360 1800,520"            stroke-width="1.6"/>
+    <circle cx="960" cy="195" r="4" fill="#a0daff" opacity="0.9"/>
+  </g>
+
+  <!-- ===== SHARP WHITE CORE LINES (no blur) ===== -->
+  <g stroke="#c8e8ff" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Primary -->
+    <polyline points="960,195 680,115 380,50 100,0"         stroke-width="0.9" opacity="0.90"/>
+    <polyline points="960,195 1240,110 1580,35 1920,0"      stroke-width="0.8" opacity="0.85"/>
+    <polyline points="960,195 960,80 970,0"                  stroke-width="0.7" opacity="0.80"/>
+    <polyline points="960,195 480,340 100,500 0,570"        stroke-width="0.9" opacity="0.90"/>
+    <polyline points="960,195 1480,360 1800,520 1920,600"   stroke-width="0.8" opacity="0.85"/>
+    <polyline points="960,195 820,500 700,800 620,1080"     stroke-width="0.8" opacity="0.85"/>
+    <polyline points="960,195 1120,480 1280,780 1380,1080"  stroke-width="0.8" opacity="0.82"/>
+    <polyline points="960,195 750,600 560,900 400,1080"     stroke-width="0.7" opacity="0.75"/>
+    <polyline points="960,195 1250,680 1500,950 1600,1080"  stroke-width="0.7" opacity="0.75"/>
+    <!-- Secondary focal -->
+    <polyline points="420,520 180,380 0,280"                stroke-width="0.7" opacity="0.70"/>
+    <polyline points="420,520 120,600 0,660"                stroke-width="0.6" opacity="0.65"/>
+    <polyline points="420,520 280,750 80,980 0,1040"       stroke-width="0.6" opacity="0.65"/>
+    <polyline points="420,520 600,720 760,940 800,1080"    stroke-width="0.6" opacity="0.60"/>
+    <polyline points="1550,400 1750,300 1920,220"          stroke-width="0.6" opacity="0.65"/>
+    <polyline points="1550,400 1800,600 1920,720"          stroke-width="0.6" opacity="0.60"/>
+    <polyline points="1550,400 1700,800 1780,1080"         stroke-width="0.5" opacity="0.55"/>
+    <!-- Cross -->
+    <polyline points="0,150 280,195 600,185 960,195"        stroke-width="0.6" opacity="0.60"/>
+    <polyline points="960,195 1300,210 1600,190 1920,185"   stroke-width="0.5" opacity="0.55"/>
+    <polyline points="0,820 380,800 750,830 1050,810 1380,840 1700,820 1920,850" stroke-width="0.5" opacity="0.50"/>
+    <polyline points="0,430 200,440 420,520 700,490 1200,500 1550,400" stroke-width="0.5" opacity="0.50"/>
+    <!-- Tertiary -->
+    <polyline points="680,115 620,260 580,450"              stroke-width="0.5" opacity="0.50"/>
+    <polyline points="480,340 380,250 300,120"              stroke-width="0.4" opacity="0.48"/>
+    <polyline points="820,500 700,460 580,490"              stroke-width="0.4" opacity="0.48"/>
+    <polyline points="1120,480 1250,420 1380,460"           stroke-width="0.4" opacity="0.48"/>
+    <polyline points="1240,110 1180,280 1100,460"           stroke-width="0.5" opacity="0.50"/>
+    <polyline points="380,50 350,180 320,350"               stroke-width="0.4" opacity="0.48"/>
+    <polyline points="420,520 550,560 700,600"              stroke-width="0.4" opacity="0.45"/>
+    <polyline points="1480,360 1400,500 1280,650"           stroke-width="0.4" opacity="0.45"/>
+    <polyline points="280,750 420,780 560,760"              stroke-width="0.4" opacity="0.42"/>
+    <polyline points="700,800 600,720 560,600"              stroke-width="0.4" opacity="0.42"/>
+    <polyline points="1280,780 1450,750 1550,780"           stroke-width="0.4" opacity="0.42"/>
+    <polyline points="1380,840 1420,950 1450,1080"          stroke-width="0.4" opacity="0.42"/>
+    <polyline points="750,830 720,950 700,1080"             stroke-width="0.4" opacity="0.42"/>
+  </g>
+
+  <!-- ===== FOCAL POINT (bright white dot) ===== -->
+  <circle cx="960" cy="195" r="6" fill="#ffffff" opacity="0.25" filter="url(#glow-strong)"/>
+  <circle cx="960" cy="195" r="3" fill="#d0eeff" opacity="0.85"/>
+  <circle cx="960" cy="195" r="1.5" fill="#ffffff" opacity="1"/>
+
+  <!-- Small secondary impact marks -->
+  <circle cx="420" cy="520" r="2" fill="#90caff" opacity="0.6"/>
+  <circle cx="1550" cy="400" r="2" fill="#90caff" opacity="0.5"/>
+
+</svg>
