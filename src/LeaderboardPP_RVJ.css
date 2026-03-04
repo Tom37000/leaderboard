@@ -6,6 +6,129 @@
   --team-stats-header-color: #4676e5;
 }
 
+.pp_rvj .dual_leaderboard {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: auto;
+  top: 166px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  transition: gap 0.4s ease;
+}
+
+.pp_rvj .dual_leaderboard.single-column {
+  gap: 0;
+}
+
+.pp_rvj .leaderboard_column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pp_rvj .leaderboard_column.second-column {
+  animation: ppRvjSlideIn 0.5s ease-out;
+}
+
+@keyframes ppRvjSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.pp_rvj .two-columns .row_container,
+.pp_rvj .two-columns .header_container {
+  gap: 6px;
+}
+
+.pp_rvj .two-columns .row_container .rank_container {
+  width: 70px;
+  flex: 0 0 70px;
+  margin-left: 0;
+}
+
+.pp_rvj .two-columns .header_container .rank_header {
+  width: 78px;
+  flex: 0 0 78px;
+  margin-left: 0;
+  padding-left: 4px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.pp_rvj .two-columns .row_container .name_container {
+  width: 425px;
+  flex: 0 0 425px;
+  padding: 2px 10px;
+  overflow: hidden;
+}
+
+.pp_rvj .two-columns .header_container .name_header {
+  width: 425px;
+  flex: 0 0 425px;
+}
+
+.pp_rvj .two-columns .row_container .info_box {
+  width: 68px;
+  flex: 0 0 68px;
+  font-size: 20px;
+}
+
+.pp_rvj .two-columns .header_container .info_header {
+  width: 68px;
+  flex: 0 0 68px;
+  box-sizing: border-box;
+  padding: 0 2px;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  text-align: center;
+}
+
+.pp_rvj .two-columns .header_container .info_header.avg_place_header {
+  width: 110px;
+  flex: 0 0 110px;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.pp_rvj .two-columns .header_container .info_header.games_header {
+  width: 94px;
+  flex: 0 0 94px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  white-space: nowrap;
+  font-size: 13px;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  text-align: center;
+}
+
+.pp_rvj .two-columns .row_container .info_box.avg_place_box {
+  width: 110px;
+  flex: 0 0 110px;
+}
+
+.pp_rvj .two-columns .row_container .info_box.games_box {
+  width: 94px;
+  flex: 0 0 94px;
+}
+
 .pp_rvj .leaderboard_table {
   position: absolute;
   width: 100%;
@@ -22,15 +145,21 @@
   width: 1920px;
   height: 100vh;
   overflow-y: auto;
-  background: #4676e5;
-  background-image: url("");
+  background-color: #06070b;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(229, 31, 46, 0.9) 0%, rgba(229, 31, 46, 0.34) 18%, rgba(229, 31, 46, 0) 40%),
+    radial-gradient(circle at 86% 18%, rgba(21, 121, 255, 0.88) 0%, rgba(21, 121, 255, 0.3) 18%, rgba(21, 121, 255, 0) 42%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0) 0%, rgba(255, 0, 0, 0) 8%, rgba(222, 36, 48, 0.22) 10%, rgba(255, 0, 0, 0) 14%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 82%, rgba(26, 118, 255, 0.18) 86%, rgba(0, 0, 0, 0) 90%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(120deg, rgba(123, 10, 17, 0.28) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.32) 52%, rgba(14, 64, 153, 0.26) 76%, rgba(0, 0, 0, 0.06) 100%),
+    linear-gradient(180deg, #040507 0%, #0a0b10 38%, #05060a 100%);
 }
 
 .pp_rvj .row_container {
   display: flex;
   gap: 15px;
   color: #ffffff;; 
-  box-shadow: inset 0 0 0 5px #000000;
+  box-shadow: inset 0 0 0 5px #ffffff;
   background-color: rgba(0, 0, 0, 0.25);
   border-radius: 8px;
   opacity: 1; 
@@ -38,6 +167,16 @@
   transform: translateY(0); 
   transition: opacity 0.3s ease; 
   will-change: transform, opacity; 
+}
+
+.pp_rvj .leaderboard_column > .row_container:nth-child(even),
+.pp_rvj .leaderboard_table > .row_container:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.38);
+}
+
+.pp_rvj .leaderboard_column > .row_container:nth-child(odd),
+.pp_rvj .leaderboard_table > .row_container:nth-child(odd) {
+  background-color: rgba(0, 0, 0, 0.22);
 }
 
 .pp_rvj .row_container .rank_container {
@@ -86,6 +225,7 @@
   letter-spacing: 0;
   line-height: 1;
   text-align: center;
+  text-transform: capitalize;
 }
 
 .pp_rvj .row_container .name_container .alive-dot {

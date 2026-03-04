@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react"
 import { useLocation } from 'react-router-dom';
 import { enrichWithPreviousLeaderboard, fetchUnifiedLeaderboardData, parseExcludedSessionIds } from './leaderboardShared';
 
-const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive, showFlags, memberData }) {
+const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, wins, games, order, showGamesColumn, onClick, positionChange, showPositionIndicators, animationEnabled, hasPositionChanged, cascadeFadeEnabled, cascadeIndex, alive, showFlags, memberData, isCompactLayout }) {
     const renderPositionChange = () => {
 
         if (!showPositionIndicators || alive || games < 2 || positionChange === null) {
@@ -42,7 +42,7 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
                 display: 'inline-block',
                 marginLeft: '0px',
                 position: 'absolute',
-                right: '-36px',
+                right: isCompactLayout ? '-20px' : '-36px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 pointerEvents: 'none'
@@ -106,23 +106,38 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
         };
     };
 
-    const displayLabel = showFlags && memberData && memberData.length > 0
-        ? memberData.map((member) => member.name).join(' - ')
-        : teamname;
+    const hasFlagMembers = showFlags && memberData && memberData.length > 0;
+    const estimatedLabelLength = hasFlagMembers
+        ? memberData.reduce((sum, member) => sum + (member?.name?.length || 0), 0) + ((memberData.length - 1) * 3) + (memberData.length * 4) + (alive ? 2 : 0)
+        : teamname.length + (alive ? 2 : 0);
 
     const getAutoFontSize = (length) => {
-        if (length <= 18) return 24;
-        if (length <= 24) return 22;
-        if (length <= 30) return 20;
-        if (length <= 36) return 18;
-        if (length <= 44) return 16;
-        if (length <= 54) return 14;
-        if (length <= 64) return 12;
-        return 10;
+        if (isCompactLayout) {
+            if (length > 72) return 9;
+            if (length > 64) return 10;
+            if (length > 56) return 11;
+            if (length > 48) return 12;
+            if (length > 42) return 13;
+            if (length > 36) return 14;
+            if (length > 30) return hasFlagMembers ? 16 : 17;
+            if (length > 24) return hasFlagMembers ? 18 : 19;
+            if (length > 18) return hasFlagMembers ? 20 : 21;
+            if (length > 14) return hasFlagMembers ? 21 : 22;
+            return hasFlagMembers ? 23 : 24;
+        }
+
+        if (length <= 18) return 26;
+        if (length <= 24) return 24;
+        if (length <= 30) return 22;
+        if (length <= 36) return 20;
+        if (length <= 44) return 18;
+        if (length <= 54) return 16;
+        if (length <= 64) return 14;
+        return 12;
     };
 
-    const teamFontSize = getAutoFontSize(displayLabel.length);
-    const flagSize = Math.max(12, Math.min(22, teamFontSize + 2));
+    const teamFontSize = getAutoFontSize(estimatedLabelLength);
+    const flagSize = Math.max(isCompactLayout ? 10 : 12, Math.min(isCompactLayout ? 18 : 22, teamFontSize + (isCompactLayout ? 1 : 2)));
 
     return (
         <div className='row_container' style={{
@@ -145,6 +160,11 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
             <div className='name_container' style={{
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
+                overflow: isCompactLayout ? 'hidden' : 'visible',
+                textOverflow: isCompactLayout ? 'ellipsis' : 'clip',
+                paddingLeft: isCompactLayout ? '12px' : undefined,
+                paddingRight: isCompactLayout ? '12px' : undefined,
+                boxSizing: isCompactLayout ? 'border-box' : undefined,
 
             }} onClick={onClick}>
                 <span className='team_name' style={{ fontSize: `${teamFontSize}px` }}>
@@ -171,11 +191,11 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
                     )}
                 </span>
             </div>
-            <div className='info_box'>{avg_place.toFixed(2)}</div>
+            <div className='info_box avg_place_box'>{avg_place.toFixed(2)}</div>
             <div className='info_box'>{elims}</div>
             <div className='info_box'>{wins}</div>
             <div className='info_box'>{points}</div>
-            {showGamesColumn && <div className='info_box'>{games}</div>}
+            {showGamesColumn && <div className='info_box games_box'>{games}</div>}
         </div>
     );
 }, (prevProps, nextProps) => {
@@ -196,7 +216,8 @@ const Row = React.memo(function Row({ rank, teamname, points, elims, avg_place, 
         prevProps.cascadeFadeEnabled === nextProps.cascadeFadeEnabled &&
         prevProps.alive === nextProps.alive &&
         prevProps.showFlags === nextProps.showFlags &&
-        prevProps.memberData === nextProps.memberData
+        prevProps.memberData === nextProps.memberData &&
+        prevProps.isCompactLayout === nextProps.isCompactLayout
     );
 });
 
@@ -550,57 +571,12 @@ function LeaderboardPP_RVJ() {
 
 
 
-    function nextPageFromPoints() {
-        if (!showGamesColumn) {
-            const filteredLeaderboard = leaderboard.filter(team => {
-                if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
-                    return true;
-                }
-                if (!isNaN(searchQuery) && searchQuery.trim() !== '') {
-                    const searchPosition = parseInt(searchQuery.trim());
-                    if (team.place === searchPosition) {
-                        return true;
-                    }
-                }
-                if (teamDetails[team.teamname] && teamDetails[team.teamname].members) {
-                    return teamDetails[team.teamname].members.some(member =>
-                        member.ingame_name && member.ingame_name.toLowerCase().includes(searchQuery.toLowerCase())
-                    );
-                }
-                return false;
-            });
-            const maxPages = Math.ceil(filteredLeaderboard.length / 10) - 1;
+    function nextPage() {
+        const total = getFilteredLeaderboard().length;
+        const maxPages = Math.max(0, Math.ceil(total / 20) - 1);
 
-            if (localPage < maxPages) {
-                setLocalPage(localPage + 1);
-            }
-        }
-    }
-
-    function nextPageFromGames() {
-        if (showGamesColumn) {
-            const filteredLeaderboard = leaderboard.filter(team => {
-                if (team.teamname.toLowerCase().includes(searchQuery.toLowerCase())) {
-                    return true;
-                }
-                if (!isNaN(searchQuery) && searchQuery.trim() !== '') {
-                    const searchPosition = parseInt(searchQuery.trim());
-                    if (team.place === searchPosition) {
-                        return true;
-                    }
-                }
-                if (teamDetails[team.teamname] && teamDetails[team.teamname].members) {
-                    return teamDetails[team.teamname].members.some(member =>
-                        member.ingame_name && member.ingame_name.toLowerCase().includes(searchQuery.toLowerCase())
-                    );
-                }
-                return false;
-            });
-            const maxPages = Math.ceil(filteredLeaderboard.length / 10) - 1;
-
-            if (localPage < maxPages) {
-                setLocalPage(localPage + 1);
-            }
+        if (localPage < maxPages) {
+            setLocalPage(localPage + 1);
         }
     }
 
@@ -636,11 +612,71 @@ function LeaderboardPP_RVJ() {
         });
     };
 
-    const currentPage = Math.floor((apiPage) + localPage);
-    const pageSize = 10;
     const filteredLeaderboard = getFilteredLeaderboard();
+    const currentPage = Math.floor(apiPage + localPage);
+    const leftItems = filteredLeaderboard.slice(currentPage * 20, (currentPage * 20) + 10);
+    const rightItems = filteredLeaderboard.slice((currentPage * 20) + 10, (currentPage * 20) + 20);
+    const isSingleColumnLayout = rightItems.length === 0;
+    const displayedLeaderboard = leftItems;
+    const nextPageFromPoints = nextPage;
+    const nextPageFromGames = nextPage;
 
-    const displayedLeaderboard = filteredLeaderboard.slice(currentPage * pageSize, (currentPage * pageSize) + pageSize);
+    const renderHeader = () => (
+        <div className='header_container'>
+            <div className='rank_header' onClick={previousPage}>PLACE</div>
+            <div className='name_header'>EQUIPES</div>
+            <div className='info_header avg_place_header'>AVG PLACE</div>
+            <div className='info_header'>ELIMS</div>
+            <div className='info_header'>WINS</div>
+            <div className='info_header' onClick={nextPage}>PTS</div>
+            {showGamesColumn && <div onClick={nextPage} className='info_header games_header'>GAMES</div>}
+        </div>
+    );
+
+    const renderRows = (items, cascadeOffset = 0, isCompactLayout = !isSingleColumnLayout) => items.map((data, index) => {
+        const positionChange = Math.abs(data.positionChange || 0);
+        let animationOrder;
+
+        if (positionChange >= 500) {
+            animationOrder = 1;
+        } else if (positionChange >= 100) {
+            animationOrder = 2;
+        } else if (positionChange >= 50) {
+            animationOrder = 3;
+        } else if (positionChange >= 10) {
+            animationOrder = 4;
+        } else if (positionChange > 0) {
+            animationOrder = 5;
+        } else {
+            animationOrder = index + 6;
+        }
+
+        return (
+            <Row
+                key={`${data.teamId || data.teamname}-${data.place}`}
+                rank={data.place}
+                teamname={data.teamname}
+                points={data.points}
+                elims={data.elims}
+                wins={data.wins}
+                games={data.games}
+                avg_place={data.avg_place}
+                order={animationOrder}
+                showGamesColumn={showGamesColumn}
+                onClick={() => handleTeamClick(data.teamname)}
+                positionChange={data.positionChange}
+                showPositionIndicators={showPositionIndicators}
+                animationEnabled={animationEnabled && data.hasPositionChanged}
+                hasPositionChanged={data.hasPositionChanged || false}
+                cascadeFadeEnabled={cascadeFadeEnabled}
+                cascadeIndex={cascadeOffset + index}
+                alive={data.alive}
+                showFlags={showFlags}
+                memberData={data.memberData}
+                isCompactLayout={isCompactLayout}
+            />
+        );
+    });
 
     return (
         <div className='pp_rvj'>
@@ -666,9 +702,22 @@ function LeaderboardPP_RVJ() {
                     paddingTop: '50px',
                     marginBottom: '20px',
                     fontWeight: 'bold'
-                }}>Classement | Finale PP</div>
+                }}>Classement Finale PP</div>
 
-                <div className='leaderboard_table'>
+                <div className={`dual_leaderboard ${isSingleColumnLayout ? 'single-column' : 'two-columns'}`}>
+                    <div className='leaderboard_column'>
+                        {renderHeader()}
+                        {renderRows(leftItems, 0, !isSingleColumnLayout)}
+                    </div>
+                    {!isSingleColumnLayout && (
+                        <div className='leaderboard_column second-column'>
+                            {renderHeader()}
+                            {renderRows(rightItems, 10, true)}
+                        </div>
+                    )}
+                </div>
+
+                <div className='leaderboard_table' style={{ left: '-99999px', top: '-99999px', display: selectedTeam ? 'flex' : 'none' }}>
                     <div className='header_container'>
                         <div className='rank_header' onClick={previousPage}>PLACE</div>
                         <div className='name_header'>ÉQUIPE</div>
