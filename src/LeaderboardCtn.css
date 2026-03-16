@@ -18,6 +18,111 @@
   gap: 10px;
 }
 
+.ctn .dual_leaderboard {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: auto;
+  top: 166px;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  transition: gap 0.4s ease;
+}
+
+.ctn .dual_leaderboard.single-column {
+  gap: 0;
+}
+
+.ctn .leaderboard_column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ctn .leaderboard_column.second-column {
+  animation: ctnSlideIn 0.5s ease-out;
+}
+
+@keyframes ctnSlideIn {
+  0% { opacity: 0; transform: translateX(50px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.ctn .two-columns .row_container,
+.ctn .two-columns .header_container {
+  gap: 8px;
+}
+
+.ctn .two-columns .row_container .rank_container {
+  width: 80px;
+  margin-left: 0px;
+}
+
+.ctn .two-columns .header_container .rank_header {
+  width: 80px;
+  margin-left: 0px;
+  padding-left: 4px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.ctn .two-columns .row_container .name_container {
+  width: 420px;
+  overflow: visible;
+}
+
+.ctn .two-columns .header_container .name_header {
+  width: 420px;
+}
+
+.ctn .two-columns .row_container .info_box {
+  width: 85px;
+  font-size: 21px;
+}
+
+.ctn .two-columns .header_container .info_header {
+  width: 85px;
+  box-sizing: border-box;
+  padding: 0 4px;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  text-align: center;
+}
+
+.ctn .two-columns .header_container .info_header.avg_place_header {
+  width: 95px;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.ctn .two-columns .header_container .info_header.games_header {
+  width: 96px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  white-space: nowrap;
+  font-size: 14px;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  text-align: center;
+}
+
+.ctn .two-columns .row_container .info_box.games_box {
+  width: 96px;
+}
+
+.ctn .two-columns .row_container .info_box.avg_place_box {
+  width: 95px;
+}
+
 .ctn .leaderboard_container {
   width: 1920px;
   height: 100vh;
@@ -36,6 +141,14 @@
   transform: translateY(0);
   transition: opacity 0.3s ease;
   will-change: transform, opacity;
+}
+
+.ctn .row_container:nth-child(odd) {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.ctn .row_container:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.35);
 }
 
 .ctn .row_container .rank_container {
